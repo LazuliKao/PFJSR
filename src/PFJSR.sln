@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "PFJSR", "PFJSR\PFJSR.fsproj", "{531587C4-D9A3-4779-8C86-3A07716E08B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PFJSRBDSAPI", "PFJSRBDSAPI\PFJSRBDSAPI.csproj", "{2020EF3C-185D-409C-986E-43B80CDF0EE9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{531587C4-D9A3-4779-8C86-3A07716E08B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{531587C4-D9A3-4779-8C86-3A07716E08B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{531587C4-D9A3-4779-8C86-3A07716E08B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{531587C4-D9A3-4779-8C86-3A07716E08B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2020EF3C-185D-409C-986E-43B80CDF0EE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2020EF3C-185D-409C-986E-43B80CDF0EE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2020EF3C-185D-409C-986E-43B80CDF0EE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2020EF3C-185D-409C-986E-43B80CDF0EE9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {58D11D0C-CD2E-49B6-B163-3639304BBF99}
+	EndGlobalSection
+EndGlobal

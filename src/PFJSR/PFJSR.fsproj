@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netcoreapp3.1;net5;net461</TargetFrameworks>
+    <AssemblyName>PFJSR.csr</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Console.fs" />
+    <Compile Include="Plugin.fs" />
+    <Compile Include="CSR.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="4.1.0" />
+    <PackageReference Include="Fody" Version="6.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Jint" Version="3.0.0-beta-2002" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PFJSRBDSAPI\PFJSRBDSAPI.csproj" />
+  </ItemGroup>
+
+</Project>
