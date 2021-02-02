@@ -1,11 +1,11 @@
 ﻿ 
-//api实现
 namespace CSR
 open CSR
   type public Plugin()=
         static let mutable mapi:MCCSAPI =null
         //插件主入口 请勿随意更改(由gxh翻译自CSRAPI)
         static member public onServerStart(pathandversion:string):int =
+            printfn "%s" pathandversion
             let mutable result:int = -1
             let pav:string[] =pathandversion.Split(",".ToCharArray())
             if  pav.Length > 1 then
