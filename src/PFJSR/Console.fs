@@ -1,6 +1,7 @@
 ﻿namespace PFJSR
 module Console=
     let WriteLine(content :string)=
-        System.Console.WriteLine(content)
+        ("[PFJSR]",System.Drawing.Color.Yellow)|>Colorful.Console.Write
+        (content,System.Drawing.Color.AliceBlue)|>Colorful.Console.WriteLine
     let WriteLineErr(content :string)=
-        System.Console.WriteLine(content)
+        printfn "[ERROR]%s" content

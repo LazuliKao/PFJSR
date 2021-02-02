@@ -8,19 +8,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Data.fs" />
+    <Compile Include="API.fs" />
     <Compile Include="Console.fs" />
+    <Compile Include="NetJS\nativefunc.fs" />
+    <Compile Include="NetJS\jsr.fs" />
+    <Compile Include="Loader.fs" />
+    <Compile Include="Data.fs" />
     <Compile Include="Plugin.fs" />
     <Compile Include="CSR.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Alba.CsConsoleFormat.ColorfulConsole-NoXaml" Version="1.0.0" />
+    <PackageReference Include="Colorful.Console" Version="1.2.15" />
     <PackageReference Include="Costura.Fody" Version="4.1.0" />
     <PackageReference Include="Fody" Version="6.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Jint" Version="3.0.0-beta-2002" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>

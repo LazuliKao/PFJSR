@@ -10,7 +10,7 @@ module Data=
        member this.Path : string = "scripts"
     type ConfigJSRModel() = 
         member this.Enable : bool = true
-        member this.Path : string = "js"
+        member this.Path : string = "NetJS"
     type ConfigModel() =
         member this.NativeScripts  : ConfigNativeScriptsModel=
             new ConfigNativeScriptsModel()
