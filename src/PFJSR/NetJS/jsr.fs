@@ -29,15 +29,9 @@ module JSR=
                                            NativeFunc.Basic.mkdir)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.getWorkingPath),
                                            NativeFunc.Basic.getWorkingPath)|>eng.SetValue|>ignore
-
         //核心玩法
-        (new JsString(nameof core.addBeforeActListener),
-                                           core.addBeforeActListener)|>eng.SetValue|>ignore
-        (new JsString(nameof core.addAfterActListener),
-                                           core.addAfterActListener)|>eng.SetValue|>ignore
-        (new JsString(nameof core.removeBeforeActListener),
-                                           core.removeBeforeActListener)|>eng.SetValue|>ignore
-        (new JsString(nameof core.removeAfterActListener),
-                                           core.removeAfterActListener)|>eng.SetValue|>ignore
-
+        for item in core.GetType().GetProperties() do
+             (new JsString(item.Name),
+                  item.GetValue(core))|>eng.SetValue|>ignore
+             //Console.WriteLine(item.Name)
         js|>eng.Execute

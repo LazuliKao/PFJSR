@@ -122,10 +122,60 @@ module NativeFunc=
         type addAfterActListener_delegate = delegate of string*System.Func<string,obj> -> int
         type removeBeforeActListener_delegate = delegate of string*int -> unit
         type removeAfterActListener_delegate = delegate of string*int -> unit
+        type setCommandDescribe_delegate = delegate of string*string -> unit
+        type runcmd_delegate = delegate of string -> bool
+        type logout_delegate = delegate of string -> unit
+        type getOnLinePlayers_delegate = delegate of unit -> string
+        type getStructure_delegate = delegate of int*string*string*bool*bool -> string
+        type setStructure_delegate = delegate of string*int*string*byte*bool*bool -> bool
+        type setServerMotd_delegate = delegate of string*bool -> bool
+        type JSErunScript_delegate = delegate of string*System.Action<bool> -> unit
+        type JSEfireCustomEvent_delegate = delegate of string*string*System.Action<bool> -> unit
+        type reNameByUuid_delegate = delegate of string*string -> bool
+        type getPlayerAbilities_delegate = delegate of string -> string
+        type setPlayerAbilities_delegate = delegate of string*string -> bool
+        type getPlayerAttributes_delegate = delegate of string -> string
+        type setPlayerTempAttributes_delegate = delegate of string*string -> bool
+        type getPlayerMaxAttributes_delegate = delegate of string -> string
+        type setPlayerMaxAttributes_delegate = delegate of string*string -> bool
+        type getPlayerItems_delegate = delegate of string -> string
+        type getPlayerSelectedItem_delegate = delegate of string -> string
+        type setPlayerItems_delegate = delegate of string*string -> bool
+        type addPlayerItemEx_delegate = delegate of string*string -> bool
+        type addPlayerItem_delegate = delegate of string*int*int16*byte -> bool
+        type getPlayerEffects_delegate = delegate of string -> string
+        type setPlayerEffects_delegate = delegate of string*string -> bool
+        type setPlayerBossBar_delegate = delegate of string*string*float32 -> bool
+        type removePlayerBossBar_delegate = delegate of string -> bool
+        type selectPlayer_delegate = delegate of string -> string
+        type transferserver_delegate = delegate of string*string*int -> bool
+        type teleport_delegate = delegate of string*float32*float32*float32*int -> bool
+        type talkAs_delegate = delegate of string*string -> bool
+        type runcmdAs_delegate = delegate of string*string -> bool
+        type sendSimpleForm_delegate = delegate of string*string*string*string -> uint
+        type sendModalForm_delegate = delegate of string*string*string*string*string -> uint
+        type sendCustomForm_delegate = delegate of string*string -> uint
+        type releaseForm_delegate = delegate of uint -> bool
+        type setPlayerSidebar_delegate = delegate of string*string*string -> bool
+        type removePlayerSidebar_delegate = delegate of string -> bool
+        type getPlayerPermissionAndGametype_delegate = delegate of string -> string
+        type setPlayerPermissionAndGametype_delegate = delegate of string*string -> bool
+        type disconnectClient_delegate = delegate of string*string -> bool
+        type sendText_delegate = delegate of string*string -> bool
+        type getscoreboard_delegate = delegate of string*string -> int
+        type setscoreboard_delegate = delegate of string*string*int -> bool
+        type getPlayerIP_delegate = delegate of string -> string
         type Instance(scriptName:string) =
             let BeforeActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let AfterActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
-            member this.addBeforeActListener=
+            let AssertCommercial(fn:string)=
+                if not api.COMMERCIAL then
+                    let err = $"获取方法\"{fn}\"失败，社区版不支持该方法！"
+                    err|>Console.WriteLine
+                    err|>failwith 
+            let InvokeRemoveFailed(a1:string ,a2:string)= 
+                "在脚本\""+scriptName+"\"执行\""+a1+"\"无效，参数2的值仅可以通过\""+a2+"\"结果获得"|>Console.WriteLineErr
+            member _this.addBeforeActListener=
                 addBeforeActListener_delegate(fun k f-> 
                 (
                     let fullFunc=MCCSAPI.EventCab(fun e->
@@ -145,7 +195,7 @@ module NativeFunc=
                     (k,fullFunc)|>api.addBeforeActListener|>ignore
                     funcHash
                 ))      
-            member this.addAfterActListener=
+            member _this.addAfterActListener=
                 addAfterActListener_delegate(fun k f-> 
                 (
                     let fullFunc=MCCSAPI.EventCab(fun e->
@@ -165,10 +215,6 @@ module NativeFunc=
                     (k,fullFunc)|>api.addAfterActListener|>ignore
                     funcHash
                 ))  
-            member private this.InvokeRemoveFailed=fun (a1:string ,a2:string)->
-                (
-                     "在脚本\""+scriptName+"\"执行\""+a1+"\"无效，参数2的值仅可以通过\""+a2+"\"结果获得"|>Console.WriteLineErr
-                )
             member this.removeBeforeActListener=
                 removeBeforeActListener_delegate(fun k fhash-> 
                 (   
@@ -178,8 +224,8 @@ module NativeFunc=
                             (k, getFunc )|>api.removeBeforeActListener|>ignore
                             BeforeActListeners.Remove(fhash)|>ignore
                         else
-                            this.InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
-                    with _-> this.InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
+                            InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
+                    with _-> InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
               ))   
             member this.removeAfterActListener=
                 removeAfterActListener_delegate(fun k fhash-> 
@@ -190,6 +236,182 @@ module NativeFunc=
                             (k, getFunc )|>api.removeAfterActListener|>ignore
                             AfterActListeners.Remove(fhash)|>ignore
                         else
-                            this.InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
-                    with _->this.InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
+                            InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
+                    with _->InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
                 ))
+            member _this.setCommandDescribe=setCommandDescribe_delegate(fun c s->(c,s)|>api.setCommandDescribe)
+            member _this.runcmd=runcmd_delegate(fun cmd->cmd|>api.runcmd)
+            member _this.logout=logout_delegate(fun l->l|>api.logout)
+            member _this.getOnLinePlayers=getOnLinePlayers_delegate(fun ()->api.getOnLinePlayers())
+            member this.getStructure =getStructure_delegate(fun did posa posb exent exblk->
+                (
+                    nameof this.getStructure|>AssertCommercial
+                    (did, posa, posb, exent, exblk)|>api.getStructure
+                ))
+            member this.setStructure =setStructure_delegate(fun jdata did jsonposa rot exent exblk->
+                (
+                    nameof this.setStructure|>AssertCommercial
+                    (jdata, did, jsonposa, rot, exent, exblk)|>api.setStructure
+                ))
+            member _this.setServerMotd=setServerMotd_delegate(fun motd isShow->(motd, isShow)|>api.setServerMotd)
+            member _this.JSErunScript=JSErunScript_delegate(fun js cb->
+                (
+                    let fullFunc=MCCSAPI.JSECab(fun result->
+                        (
+                        try
+                            cb.Invoke(result)
+                        with ex->
+                            (
+                            try
+                            $"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：{ex}"|>Console.WriteLineErr
+                            with _->()
+                            )
+                        ))
+                    (js,fullFunc)|>api.JSErunScript
+                )
+            )
+            member _this.JSEfireCustomEvent=JSEfireCustomEvent_delegate(fun ename jdata cb->
+                (
+                    let fullFunc=MCCSAPI.JSECab(fun result->
+                        (
+                        try
+                            cb.Invoke(result)
+                        with ex->
+                            (
+                            try
+                            $"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：{ex}"|>Console.WriteLineErr
+                            with _->()
+                            )
+                        ))
+                    (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
+                )
+            )
+            member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->(uuid,name)|>api.reNameByUuid)
+            member this.getPlayerAbilities =getPlayerAbilities_delegate(fun uuid->
+                (
+                    nameof this.getPlayerAbilities|>AssertCommercial
+                    uuid|>api.getPlayerAbilities
+                ))
+            member this.setPlayerAbilities =setPlayerAbilities_delegate(fun uuid a->
+                (
+                    nameof this.setPlayerAbilities|>AssertCommercial
+                    (uuid,a)|>api.setPlayerAbilities
+                ))
+            member this.getPlayerAttributes =getPlayerAttributes_delegate(fun uuid->
+                (
+                    nameof this.getPlayerAttributes|>AssertCommercial
+                    uuid|>api.getPlayerAttributes
+                ))
+            member this.setPlayerTempAttributes =setPlayerTempAttributes_delegate(fun uuid a->
+                (
+                    nameof this.setPlayerTempAttributes|>AssertCommercial
+                    (uuid,a)|>api.setPlayerTempAttributes
+                ))
+            member this.getPlayerMaxAttributes =getPlayerMaxAttributes_delegate(fun uuid->
+                (
+                    nameof this.getPlayerMaxAttributes|>AssertCommercial
+                    uuid|>api.getPlayerMaxAttributes
+                ))
+            member this.setPlayerMaxAttributes =setPlayerMaxAttributes_delegate(fun uuid a->
+                (
+                    nameof this.setPlayerMaxAttributes|>AssertCommercial
+                    (uuid,a)|>api.setPlayerMaxAttributes
+                ))
+            member this.getPlayerItems =getPlayerItems_delegate(fun uuid->
+                (
+                    nameof this.getPlayerItems|>AssertCommercial
+                    uuid|>api.getPlayerItems
+                ))
+            member this.getPlayerSelectedItem =getPlayerSelectedItem_delegate(fun uuid->
+                (
+                    nameof this.getPlayerSelectedItem|>AssertCommercial
+                    uuid|>api.getPlayerSelectedItem
+                ))
+            member this.setPlayerItems =setPlayerItems_delegate(fun uuid a->
+                (
+                    nameof this.setPlayerItems|>AssertCommercial
+                    (uuid,a)|>api.setPlayerItems
+                ))
+            member this.addPlayerItemEx =addPlayerItemEx_delegate(fun uuid a->
+                (
+                    nameof this.addPlayerItemEx|>AssertCommercial
+                    (uuid,a)|>api.addPlayerItemEx
+                ))
+            member _this.addPlayerItem =addPlayerItem_delegate(fun uuid id aux count->(uuid,id,aux,count)|>api.addPlayerItem)
+            member this.getPlayerEffects =getPlayerEffects_delegate(fun uuid->
+                (
+                    nameof this.getPlayerEffects|>AssertCommercial
+                    uuid|>api.getPlayerEffects
+                ))
+            member this.setPlayerEffects=setPlayerEffects_delegate(fun uuid a->
+                (
+                    nameof this.setPlayerEffects|>AssertCommercial
+                    (uuid,a)|>api.setPlayerEffects
+                ))
+            member this.setPlayerBossBar=setPlayerBossBar_delegate(fun uuid title percent->
+                (
+                    nameof this.setPlayerBossBar|>AssertCommercial
+                    (uuid,title,percent)|>api.setPlayerBossBar
+                ))
+            member this.removePlayerBossBar=removePlayerBossBar_delegate(fun uuid->
+                (
+                    nameof this.removePlayerBossBar|>AssertCommercial
+                    uuid|>api.removePlayerBossBar
+                ))
+            member _this.selectPlayer=selectPlayer_delegate(fun uuid->uuid|>api.selectPlayer)
+            member this.transferserver=transferserver_delegate(fun uuid addr port->
+                (
+                    nameof this.transferserver|>AssertCommercial
+                    (uuid, addr, port)|>api.transferserver
+                ))
+            member this.teleport=teleport_delegate(fun uuid x y z did->
+                (
+                    nameof this.teleport|>AssertCommercial
+                    (uuid,x,y,z,did)|>api.teleport
+                ))
+            member _this.talkAs=talkAs_delegate(fun uuid a->(uuid,a)|>api.talkAs)
+            member _this.runcmdAs=runcmdAs_delegate(fun uuid a->(uuid,a)|>api.runcmdAs)
+            member _this.sendSimpleForm=sendSimpleForm_delegate(fun uuid title content buttons->(uuid,title,content,buttons)|>api.sendSimpleForm)
+            member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->(uuid,title,content,button1,button2)|>api.sendModalForm)
+            member _this.sendCustomForm=sendCustomForm_delegate(fun uuid json->(uuid,json)|>api.sendCustomForm)
+            member _this.releaseForm=releaseForm_delegate(fun formid->formid|>api.releaseForm)
+            member this.setPlayerSidebar=setPlayerSidebar_delegate(fun uuid title list->
+                (
+                    nameof this.setPlayerSidebar|>AssertCommercial
+                    (uuid,title,list)|>api.setPlayerSidebar
+                ))
+            member this.removePlayerSidebar=removePlayerSidebar_delegate(fun uuid->
+                (
+                    nameof this.removePlayerSidebar|>AssertCommercial
+                    uuid|>api.removePlayerSidebar
+                ))
+            member this.getPlayerPermissionAndGametype =getPlayerPermissionAndGametype_delegate(fun uuid->
+                (
+                    nameof this.getPlayerPermissionAndGametype|>AssertCommercial
+                    uuid|>api.getPlayerPermissionAndGametype
+                ))
+            member this.setPlayerPermissionAndGametype=setPlayerPermissionAndGametype_delegate(fun uuid a->
+                (
+                    nameof this.setPlayerPermissionAndGametype|>AssertCommercial
+                    (uuid,a)|>api.setPlayerPermissionAndGametype
+                ))
+            member _this.disconnectClient=disconnectClient_delegate(fun uuid a->(uuid,a)|>api.disconnectClient)
+            member _this.sendText=sendText_delegate(fun uuid a->(uuid,a)|>api.sendText)
+            member _this.getscoreboard=getscoreboard_delegate(fun uuid a->(uuid,a)|>api.getscoreboard)
+            member _this.setscoreboard=setscoreboard_delegate(fun uuid sname value->(uuid,sname,value)|>api.setscoreboard)
+            member _this.getPlayerIP=getPlayerIP_delegate(fun uuid->
+                (
+                    let mutable result=System.String.Empty
+                    let data = api.selectPlayer(uuid)
+                    if data|>System.String.IsNullOrEmpty|>not then
+                        let pinfo=Newtonsoft.Json.JsonConvert.DeserializeObject<System.Collections.Generic.Dictionary<string, obj>>(data)
+                        if pinfo|>isNull|>not then
+                            let mutable pptr:obj=null
+                            if pinfo.TryGetValue("playerptr",ref pptr) then
+                                let mutable ptr = pptr|>System.Convert.ToInt64|>System.IntPtr
+                                if ptr <> System.IntPtr.Zero then
+                                    let ipport=(new CsPlayer(api, ptr)).IpPort
+                                    result<-ipport.Substring(0, ipport.IndexOf('|'))
+                    result
+                ))
+            
