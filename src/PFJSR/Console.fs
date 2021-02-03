@@ -7,3 +7,5 @@ module Console=
         ("[PFJSR]",System.Drawing.Color.Yellow)|>Colorful.Console.Write
         ("[ERROR]",System.Drawing.Color.Red)|>Colorful.Console.Write
         printfn "%s" content
+    let log(content:string)=
+        (System.Console.WriteLine(content))

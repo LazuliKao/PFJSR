@@ -12,7 +12,7 @@ module Data=
         member this.Path with get() =_Path and set value  =_Path<-value
     type ConfigJSRModel() = 
         let mutable _Enable : bool  = true
-        let mutable _Path : string  = "NetJS"
+        let mutable _Path : string  = "PFJS"
         member this.Enable with get() =_Enable and set value  =_Enable<-value
         member this.Path with get() =_Path and set value  =_Path<-value
     type ConfigModel() =

@@ -11,7 +11,7 @@ module NativeFunc=
     module Basic=
         let shares  = new System.Collections.Generic.Dictionary<string,obj>()
         type log_delegate = delegate of string -> unit
-        let log=log_delegate(fun e-> Console.WriteLine(e))
+        let log=log_delegate(fun e-> Console.log(e))
         type fileReadAllText_delegate = delegate of string -> string
         let fileReadAllText=
             fileReadAllText_delegate (fun e->  
