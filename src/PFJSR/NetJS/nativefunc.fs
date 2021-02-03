@@ -11,8 +11,7 @@ module NativeFunc=
     module Basic=
         let shares  = new System.Collections.Generic.Dictionary<string,obj>()
         type log_delegate = delegate of string -> unit
-        let log=
-            log_delegate(fun e-> Console.WriteLine(e))
+        let log=log_delegate(fun e-> Console.WriteLine(e))
         type fileReadAllText_delegate = delegate of string -> string
         let fileReadAllText=
             fileReadAllText_delegate (fun e->  
@@ -60,37 +59,6 @@ module NativeFunc=
                         o
                     else
                         Jint.Native.Undefined.Instance:>obj
-                )
-        type request_delegate = delegate of string*string*string*System.Action<bool,obj> -> unit
-        let request=
-            request_delegate(fun u m p f->
-                    System.Threading.Tasks.Task.Run(fun ()-> 
-                        (
-                            try
-                                Console.WriteLine("")
-                                //new Thread(() =>
-                                //{
-                                //    string ret = null;
-                                //    try
-                                //    {
-                                //        ret = localrequest(JSString(u), JSString(m), JSString(p));
-                                //    }
-                                //    catch { }
-                                //    if (f != null)
-                                //    {
-                                //        try
-                                //        {
-                                //            f.Invoke(false, new string[] { ret });
-                                //        }
-                                //        catch
-                                //        {
-                                //            Console.WriteLine("[JS] File " + jsengines[f.Engine] + " Script err by call [request].");
-                                //        }
-                                //    }
-                                //}).Start();
-                            with _->()
-                        )
-                        )|>ignore
                 )
         type setTimeout_delegate = delegate of System.Action*int -> unit
         let setTimeout=
@@ -165,6 +133,7 @@ module NativeFunc=
         type getscoreboard_delegate = delegate of string*string -> int
         type setscoreboard_delegate = delegate of string*string*int -> bool
         type getPlayerIP_delegate = delegate of string -> string
+        type request_delegate = delegate of string*string*string*System.Action<bool,obj> -> unit
         type Instance(scriptName:string) =
             let BeforeActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let AfterActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
@@ -414,4 +383,23 @@ module NativeFunc=
                                     result<-ipport.Substring(0, ipport.IndexOf('|'))
                     result
                 ))
-            
+            member _this.request=
+                request_delegate(fun u m p f->
+                        Task.Run(fun ()-> 
+                            (
+                                try
+                                    let mutable ret:string = null;
+                                    try
+                                         ret <- PFJSRBDSAPI.Ex.Localrequest(u, m, p)
+                                    with _-> ()
+                                    if f|>isNull|>not then
+                                        try
+                                            (false, [ret])|>f.Invoke
+                                        with ex->
+                                        (
+                                           $"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：{ex}"|>Console.WriteLineErr
+                                        ) 
+                                with _-> ()
+                            )
+                            )|>ignore
+                    )

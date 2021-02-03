@@ -6,16 +6,20 @@ open System.IO
 
 module Data=
     type ConfigNativeScriptsModel() =
-       member this.Enable : bool = true
-       member this.Path : string = "scripts"
+        let mutable _Enable : bool  = true
+        let mutable _Path : string  = "scripts"
+        member this.Enable with get() =_Enable and set value  =_Enable<-value
+        member this.Path with get() =_Path and set value  =_Path<-value
     type ConfigJSRModel() = 
-        let Enable : bool = true
-        let Path : string = "NetJS"
+        let mutable _Enable : bool  = true
+        let mutable _Path : string  = "NetJS"
+        member this.Enable with get() =_Enable and set value  =_Enable<-value
+        member this.Path with get() =_Path and set value  =_Path<-value
     type ConfigModel() =
-        //member this.NativeScripts  : ConfigNativeScriptsModel=
-        //    new ConfigNativeScriptsModel()
-        member this.JSR:ConfigJSRModel =
-            new ConfigJSRModel()
+        let mutable _JSR= new ConfigJSRModel()
+        //let mutable _NativeScripts= new ConfigNativeScriptsModel()
+        member this.JSR with get() =_JSR and set value  =_JSR<-value
+        //member this.NativeScripts with get() =_NativeScripts and set value  =_NativeScripts<-value
     let mutable private _config: ConfigModel = new ConfigModel()
     let mutable private _hasLoaded: bool = false
     let public Config:ConfigModel = 
@@ -23,15 +27,10 @@ module Data=
             _config
         else
             let configPtah:string="plugins\\PFJSR\\config.json"|>Path.GetFullPath 
-            printf "a"
             let configDir:string=configPtah|>Path.GetDirectoryName 
-            printf "a"
             if configPtah|>File.Exists then
-                printf "a"
                 let readedStr:string=File.ReadAllText configPtah
-                printf "a"
                 _config <- JsonConvert.DeserializeObject<ConfigModel>readedStr
-                printf "%s" (_config.JSR.Enable.ToString())
             elif not (configDir|>Directory.Exists) then
                 configDir|>Directory.CreateDirectory|>ignore
             File.WriteAllText(configPtah,(_config,Formatting.Indented)|>JsonConvert.SerializeObject )

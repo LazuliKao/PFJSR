@@ -23,8 +23,6 @@ module JSR=
                                            NativeFunc.Basic.removeShareData)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.setTimeout),
                                            NativeFunc.Basic.setTimeout)|>eng.SetValue|>ignore
-        (new JsString(nameof NativeFunc.Basic.request),
-                                           NativeFunc.Basic.request)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.mkdir),
                                            NativeFunc.Basic.mkdir)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.getWorkingPath),

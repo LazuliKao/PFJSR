@@ -4,4 +4,6 @@ module Console=
         ("[PFJSR]",System.Drawing.Color.Yellow)|>Colorful.Console.Write
         (content,System.Drawing.Color.AliceBlue)|>Colorful.Console.WriteLine
     let WriteLineErr(content :string)=
-        printfn "[ERROR]%s" content
+        ("[PFJSR]",System.Drawing.Color.Yellow)|>Colorful.Console.Write
+        ("[ERROR]",System.Drawing.Color.Red)|>Colorful.Console.Write
+        printfn "%s" content
