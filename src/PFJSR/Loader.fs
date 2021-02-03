@@ -10,11 +10,12 @@ module Loader=
     let LoadJSRScript(filePath:string)=
         try
             let scriptName=filePath|>Path.GetFileNameWithoutExtension
-            let engine=
-                (
-                    (filePath|>File.ReadAllText),
-                    new PFJSR.NativeFunc.Core.Instance(scriptName)
-                )|>JSR.CreateEngine 
+            let engine=new Jint.Engine()
+            (
+                engine,
+                (filePath|>File.ReadAllText),
+                new PFJSR.NativeFunc.Core.Instance(scriptName,engine)
+            )|>JSR.CreateEngine|>ignore
             LoadedScripts<-new ScriptItemModel (scriptName, filePath)::LoadedScripts
             scriptName+"加载完成！"|>Console.WriteLine
         with ex->ex.ToString()|>Console.WriteLine

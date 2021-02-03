@@ -60,16 +60,6 @@ module NativeFunc=
                     else
                         Jint.Native.Undefined.Instance:>obj
                 )
-        type setTimeout_delegate = delegate of System.Action*int -> unit
-        let setTimeout=
-            setTimeout_delegate(fun o ms->
-                   if not (o|>isNull) then
-                        Task.Run(fun _->
-                        (
-                            ms|>Thread.Sleep
-                            o.Invoke()
-                        ))|>ignore
-                )
         type mkdir_delegate = delegate of string-> bool
         let mkdir=
             mkdir_delegate(fun dirname ->
@@ -134,7 +124,8 @@ module NativeFunc=
         type setscoreboard_delegate = delegate of string*string*int -> bool
         type getPlayerIP_delegate = delegate of string -> string
         type request_delegate = delegate of string*string*string*System.Action<bool,obj> -> unit
-        type Instance(scriptName:string) =
+        type setTimeout_delegate = delegate of obj*int -> unit
+        type Instance(scriptName:string,engine:Jint.Engine) =
             let BeforeActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let AfterActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let AssertCommercial(fn:string)=
@@ -144,6 +135,43 @@ module NativeFunc=
                     err|>failwith 
             let InvokeRemoveFailed(a1:string ,a2:string)= 
                 "在脚本\""+scriptName+"\"执行\""+a1+"\"无效，参数2的值仅可以通过\""+a2+"\"结果获得"|>Console.WriteLineErr
+            member _this.setTimeout=
+                setTimeout_delegate(fun o ms->
+                       if not (o|>isNull) then
+                            Task.Run(fun _->
+                            (
+                                try
+                                    ms|>Thread.Sleep
+                                    if o.GetType()=typeof<string> then
+                                        engine.Execute(o:?>string)|>ignore
+                                    else
+                                        (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
+                                with ex->
+                                (
+                                    $"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：{ex}"|>Console.WriteLineErr
+                                ) 
+                            ))|>ignore
+                    )
+            member _this.request=
+                request_delegate(fun u m p f->
+                        Task.Run(fun ()-> 
+                            (
+                                try
+                                    let mutable ret:string = null;
+                                    try
+                                         ret <- PFJSRBDSAPI.Ex.Localrequest(u, m, p)
+                                    with _-> ()
+                                    if f|>isNull|>not then
+                                        try
+                                            (false, [ret])|>f.Invoke
+                                        with ex->
+                                        (
+                                           $"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：{ex}"|>Console.WriteLineErr
+                                        ) 
+                                with _-> ()
+                            )
+                            )|>ignore
+                    )
             member _this.addBeforeActListener=
                 addBeforeActListener_delegate(fun k f-> 
                 (
@@ -211,7 +239,11 @@ module NativeFunc=
             member _this.setCommandDescribe=setCommandDescribe_delegate(fun c s->(c,s)|>api.setCommandDescribe)
             member _this.runcmd=runcmd_delegate(fun cmd->cmd|>api.runcmd)
             member _this.logout=logout_delegate(fun l->l|>api.logout)
-            member _this.getOnLinePlayers=getOnLinePlayers_delegate(fun ()->api.getOnLinePlayers())
+            member _this.getOnLinePlayers=getOnLinePlayers_delegate(fun ()->
+                (
+                    let result=api.getOnLinePlayers()
+                    if result|>System.String.IsNullOrEmpty then "[]" else result
+                ))
             member this.getStructure =getStructure_delegate(fun did posa posb exent exblk->
                 (
                     nameof this.getStructure|>AssertCommercial
@@ -383,23 +415,4 @@ module NativeFunc=
                                     result<-ipport.Substring(0, ipport.IndexOf('|'))
                     result
                 ))
-            member _this.request=
-                request_delegate(fun u m p f->
-                        Task.Run(fun ()-> 
-                            (
-                                try
-                                    let mutable ret:string = null;
-                                    try
-                                         ret <- PFJSRBDSAPI.Ex.Localrequest(u, m, p)
-                                    with _-> ()
-                                    if f|>isNull|>not then
-                                        try
-                                            (false, [ret])|>f.Invoke
-                                        with ex->
-                                        (
-                                           $"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：{ex}"|>Console.WriteLineErr
-                                        ) 
-                                with _-> ()
-                            )
-                            )|>ignore
-                    )
+

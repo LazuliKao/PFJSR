@@ -5,6 +5,7 @@
     <TargetFramework>net461</TargetFramework>
     <AssemblyName>PFJSR.csr</AssemblyName>
     <OutputPath>..\..\..\CSR\CSRDll\</OutputPath>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,8 +3,7 @@ open Jint.Native
 open Jint
 
 module JSR=
-    let CreateEngine(js:string,core:NativeFunc.Core.Instance):Engine=
-        let eng=new Engine()
+    let CreateEngine(eng:Engine,js:string,core:NativeFunc.Core.Instance):Engine=
         (new JsString(nameof NativeFunc.Basic.log),
                                            NativeFunc.Basic.log)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.fileReadAllText),
@@ -21,15 +20,16 @@ module JSR=
                                            NativeFunc.Basic.getShareData)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.removeShareData),
                                            NativeFunc.Basic.removeShareData)|>eng.SetValue|>ignore
-        (new JsString(nameof NativeFunc.Basic.setTimeout),
-                                           NativeFunc.Basic.setTimeout)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.mkdir),
                                            NativeFunc.Basic.mkdir)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.getWorkingPath),
                                            NativeFunc.Basic.getWorkingPath)|>eng.SetValue|>ignore
+        //(new JsString(nameof core.setTimeout),
+        //                                   core.setTimeout)|>eng.SetValue|>ignore
         //核心玩法
         for item in core.GetType().GetProperties() do
              (new JsString(item.Name),
                   item.GetValue(core))|>eng.SetValue|>ignore
-             //Console.WriteLine(item.Name)
+        //for item in core.GetType().GetMethods() do
+        //     Console.WriteLine(item.Name)
         js|>eng.Execute
