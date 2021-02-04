@@ -3,17 +3,59 @@ open CSR
 open Colorful
 open System.IO
 module PluginMain=
-    let Init(_api:MCCSAPI) =
-        API.api <- _api
+    let LoadJSRScripts()=
         if Data.Config.JSR.Enable then
             let DirPath:string=Data.Config.JSR.Path|>Path.GetFullPath
-            if not(DirPath|>Directory.Exists) then
+            if DirPath|>Directory.Exists|>not then
                 DirPath|>Directory.CreateDirectory|>ignore
-                "创建插件目录:"+Data.Config.JSR.Path|>Console.WriteLine
+                "创建JSR插件目录:"+Data.Config.JSR.Path|>Console.WriteLine
             for file in (DirPath|>Directory.GetFiles) do
                  //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
                  if file.ToLower().EndsWith(".js") then file|>Loader.LoadJSRScript
-                    
+    let LoadNativeScripts()=
+        if Data.Config.NativeScripts.Enable then
+            let DirPath:string=Data.Config.NativeScripts.Path|>Path.GetFullPath
+            if DirPath|>Directory.Exists|>not then
+                DirPath|>Directory.CreateDirectory|>ignore
+                "创建NativeScripts目录:"+Data.Config.NativeScripts.Path|>Console.WriteLine
+            let mutable startTime=5000
+            for file in (DirPath|>Directory.GetFiles) do
+                 //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
+                 if file.ToLower().EndsWith(".js") then 
+                    (file,startTime)|>Loader.LoadNativeScript
+                    startTime<-startTime+1000
+    let Init(_api:MCCSAPI) =
+        API.api <- _api
+        LoadJSRScripts()
+        LoadNativeScripts()
+        if Data.Config.JSR.HotReload then
+            API.api.addBeforeActListener(EventKey.onServerCmd,fun _e->
+                try
+                    let e=ServerCmdEvent.getFrom(_e)
+                    if e.cmd.Trim()= Data.Config.JSR.ReloadCommand then
+                        "正在重载..."|>Console.WriteLine
+                        let mutable scriptCount=0
+                        let mutable ListenerCount=0
+                        for runner in PFJSR.JSR.RunnerList do
+                            for (_,name,func) in runner.core.BeforeActListeners do
+                                API.api.removeBeforeActListener(name,func)|>ignore
+                                ListenerCount<-ListenerCount+1
+                            runner.core.BeforeActListeners.Clear()
+                            for (_,name,func) in runner.core.AfterActListeners do
+                                API.api.removeAfterActListener(name,func)|>ignore
+                                ListenerCount<-ListenerCount+1
+                            runner.core.AfterActListeners.Clear()
+                            scriptCount<-scriptCount+1
+                        PFJSR.JSR.RunnerList<-[]
+                        LoadJSRScripts()
+                        $"重载成功：已删除来自 {scriptCount} 个脚本的 {ListenerCount} 个监听"|>Console.WriteLine
+                        false
+                        //match  with
+                        //|  -> 
+                        //| _ -> false
+                    else true
+                with ex->("重载失败：",ex)|>Console.WriteLineErr;true
+            )|>ignore      
 
         //System.Threading.Tasks.Task.Run(fun ()->
         //    let script: string=System.IO.File.ReadAllText("Logging.js")

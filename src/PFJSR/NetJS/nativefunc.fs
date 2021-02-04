@@ -128,8 +128,6 @@ module NativeFunc=
         type setTimeout_delegate = delegate of obj*int -> unit
         type runScript_delegate = delegate of obj -> unit
         type Instance(scriptName:string,engine:Jint.Engine) =
-            let BeforeActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
-            let AfterActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let CheckUuid(uuid:string )=
                 if System.String.IsNullOrWhiteSpace(uuid) then
                     let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
@@ -150,6 +148,10 @@ module NativeFunc=
                     err|>failwith 
             let InvokeRemoveFailed(a1:string ,a2:string)= 
                 ("在脚本\""+scriptName+"\"执行\""+a1+"\"无效",new exn( "参数2的值仅可以通过\""+a2+"\"结果获得"))|>Console.WriteLineErr
+            let _BeforeActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
+            let _AfterActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
+            member _this.BeforeActListeners with get()=_BeforeActListeners
+            member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=
                 setTimeout_delegate(fun o ms->
                         if not (o|>isNull) then
@@ -221,7 +223,7 @@ module NativeFunc=
                             )
                         ))
                     let funcHash=f.Method.GetHashCode()
-                    BeforeActListeners.Add(funcHash,fullFunc)
+                    _this.BeforeActListeners.Add(funcHash,k,fullFunc)
                     (k,fullFunc)|>api.addBeforeActListener|>ignore
                     funcHash
                 ))      
@@ -245,7 +247,7 @@ module NativeFunc=
                             )
                         ))
                     let funcHash=f.Method.GetHashCode()
-                    AfterActListeners.Add(funcHash,fullFunc)
+                    _this.AfterActListeners.Add(funcHash,k,fullFunc)
                     (k,fullFunc)|>api.addAfterActListener|>ignore
                     funcHash
                 ))  
@@ -253,10 +255,12 @@ module NativeFunc=
                 removeBeforeActListener_delegate(fun k fhash-> 
                 (   
                     try
-                        if BeforeActListeners.ContainsKey(fhash) then
-                            let getFunc=BeforeActListeners.[fhash]
+                        let index=this.BeforeActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
+                        if index <> -1 then
+                            let item=this.BeforeActListeners.[index]
+                            let (_,_,getFunc)=item
                             (k, getFunc )|>api.removeBeforeActListener|>ignore
-                            BeforeActListeners.Remove(fhash)|>ignore
+                            this.BeforeActListeners.Remove(item)|>ignore
                         else
                             InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
                     with _-> InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
@@ -265,12 +269,14 @@ module NativeFunc=
                 removeAfterActListener_delegate(fun k fhash-> 
                 (   
                     try
-                        if AfterActListeners.ContainsKey(fhash) then
-                            let getFunc=AfterActListeners.[fhash]
-                            (k, getFunc )|>api.removeAfterActListener|>ignore
-                            AfterActListeners.Remove(fhash)|>ignore
-                        else
-                            InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
+                         let index=this.AfterActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
+                         if index <> -1 then
+                                let item=this.AfterActListeners.[index]
+                                let (_,_,getFunc)=item
+                                (k, getFunc )|>api.removeAfterActListener|>ignore
+                                this.AfterActListeners.Remove(item)|>ignore
+                         else
+                                InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
                     with _->InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
                 ))
             member _this.setCommandDescribe=setCommandDescribe_delegate(fun c s->(c,s)|>api.setCommandDescribe)

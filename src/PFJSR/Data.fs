@@ -6,7 +6,7 @@ open System.IO
 
 module Data=
     type ConfigNativeScriptsModel() =
-        let mutable _Enable : bool  = true
+        let mutable _Enable : bool  = false
         let mutable _Path : string  = "scripts"
         member this.Enable with get() =_Enable and set value  =_Enable<-value
         member this.Path with get() =_Path and set value  =_Path<-value
@@ -14,14 +14,18 @@ module Data=
         let mutable _Enable : bool  = true
         let mutable _Path : string  = "PFJS"
         let mutable _CheckUUID : bool  = true
+        let mutable _HotReload : bool  = true
+        let mutable _ReloadCommand : string  = "pfjsr reload"
         member this.Enable with get() =_Enable and set value  =_Enable<-value
         member this.Path with get() =_Path and set value  =_Path<-value
         member this.CheckUuid with get() =_CheckUUID and set value  =_CheckUUID<-value
+        member this.HotReload with get() =_HotReload and set value  =_HotReload<-value
+        member this.ReloadCommand with get() =_ReloadCommand and set value  =_ReloadCommand<-value
     type ConfigModel() =
         let mutable _JSR= new ConfigJSRModel()
-        //let mutable _NativeScripts= new ConfigNativeScriptsModel()
+        let mutable _NativeScripts= new ConfigNativeScriptsModel()
         member this.JSR with get() =_JSR and set value  =_JSR<-value
-        //member this.NativeScripts with get() =_NativeScripts and set value  =_NativeScripts<-value
+        member this.NativeScripts with get() =_NativeScripts and set value  =_NativeScripts<-value
     let mutable private _config: ConfigModel = new ConfigModel()
     let mutable private _hasLoaded: bool = false
     let public Config:ConfigModel = 
