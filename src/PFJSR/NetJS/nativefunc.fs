@@ -123,8 +123,9 @@ module NativeFunc=
         type getscoreboard_delegate = delegate of string*string -> int
         type setscoreboard_delegate = delegate of string*string*int -> bool
         type getPlayerIP_delegate = delegate of string -> string
-        type request_delegate = delegate of string*string*string*System.Action<bool,obj> -> unit
+        type request_delegate = delegate of string*string*string*System.Action<obj> -> unit
         type setTimeout_delegate = delegate of obj*int -> unit
+        type runScript_delegate = delegate of obj -> unit
         type Instance(scriptName:string,engine:Jint.Engine) =
             let BeforeActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let AfterActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
@@ -134,10 +135,10 @@ module NativeFunc=
                     err|>Console.WriteLine
                     err|>failwith 
             let InvokeRemoveFailed(a1:string ,a2:string)= 
-                "在脚本\""+scriptName+"\"执行\""+a1+"\"无效，参数2的值仅可以通过\""+a2+"\"结果获得"|>Console.WriteLineErr
+                ("在脚本\""+scriptName+"\"执行\""+a1+"\"无效",new exn( "参数2的值仅可以通过\""+a2+"\"结果获得"))|>Console.WriteLineErr
             member _this.setTimeout=
                 setTimeout_delegate(fun o ms->
-                       if not (o|>isNull) then
+                        if not (o|>isNull) then
                             Task.Run(fun _->
                             (
                                 try
@@ -148,10 +149,23 @@ module NativeFunc=
                                         (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
                                 with ex->
                                 (
-                                    $"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：{ex}"|>Console.WriteLineErr
+                                    ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
                                 ) 
                             ))|>ignore
                     )
+            member _this.runScript=
+                runScript_delegate(fun o->
+                        if not (o|>isNull) then
+                                try
+                                    if o.GetType()=typeof<string> then
+                                        engine.Execute(o:?>string)|>ignore
+                                    else
+                                        (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
+                                with ex->
+                                (
+                                    ($"在脚本\"{scriptName}\"执行\"runScript时遇到错误：",ex)|>Console.WriteLineErr
+                    )
+                )
             member _this.request=
                 request_delegate(fun u m p f->
                         Task.Run(fun ()-> 
@@ -163,15 +177,16 @@ module NativeFunc=
                                     with _-> ()
                                     if f|>isNull|>not then
                                         try
-                                            (false, [ret])|>f.Invoke
+                                            ret|>f.Invoke
                                         with ex->
                                         (
-                                           $"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：{ex}"|>Console.WriteLineErr
+                                           ($"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：",ex)|>Console.WriteLineErr
                                         ) 
                                 with _-> ()
                             )
                             )|>ignore
                     )
+            member _this.setBeforeActListener=_this.addBeforeActListener
             member _this.addBeforeActListener=
                 addBeforeActListener_delegate(fun k f-> 
                 (
@@ -182,7 +197,7 @@ module NativeFunc=
                             with ex->
                             (
                                 try
-                                "在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"BeforeAct回调时遇到错误："+ex.ToString()|>Console.WriteLineErr
+                                ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"BeforeAct回调时遇到错误：",ex)|>Console.WriteLineErr
                                 with _->()
                                 true
                             )
@@ -192,6 +207,7 @@ module NativeFunc=
                     (k,fullFunc)|>api.addBeforeActListener|>ignore
                     funcHash
                 ))      
+            member _this.setAfterActListener=_this.addAfterActListener
             member _this.addAfterActListener=
                 addAfterActListener_delegate(fun k f-> 
                 (
@@ -202,7 +218,7 @@ module NativeFunc=
                             with ex->
                             (
                                 try
-                                "在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误："+ex.ToString()|>Console.WriteLineErr
+                                ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
                                 with _->()
                                 true
                             )
@@ -264,7 +280,7 @@ module NativeFunc=
                         with ex->
                             (
                             try
-                            $"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：{ex}"|>Console.WriteLineErr
+                            ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                             )
                         ))
@@ -280,7 +296,7 @@ module NativeFunc=
                         with ex->
                             (
                             try
-                            $"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：{ex}"|>Console.WriteLineErr
+                            ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                             )
                         ))
@@ -367,13 +383,35 @@ module NativeFunc=
                 ))
             member this.teleport=teleport_delegate(fun uuid x y z did->
                 (
-                    nameof this.teleport|>AssertCommercial
-                    (uuid,x,y,z,did)|>api.teleport
+                    //try
+                    //    {
+                    //        const string key = ;
+                    //        IntPtr ptr = CsApi.getSharePtr(key);
+                    //        if (ptr == IntPtr.Zero) { GetPFEssentialsApiFailedTips(key); }
+                    //        else
+                    //        {
+                    //            Action<string,string> org = (Action<string,string>)System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr);
+                    //            org.Invoke(name,cmd);
+                    //        }
+                    //}
+                    //catch { }
+                    if  api.COMMERCIAL then
+                        (uuid,x,y,z,did)|>api.teleport
+                    else
+                        let ptr:System.IntPtr=api.getSharePtr("PFEssentials.PublicApi.V2.Teleport") 
+                        let mutable result=false
+                        if ptr <> System.IntPtr.Zero then
+                            let org = System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr):?>System.Func<string,single,single,single,int,bool>
+                            result<- ((uuid,x,y,z,did)|>org.Invoke )
+                        if result|>not then
+                            nameof this.teleport|>AssertCommercial
+                            (uuid,x,y,z,did)|>api.teleport
+                        else result
                 ))
             member _this.talkAs=talkAs_delegate(fun uuid a->(uuid,a)|>api.talkAs)
             member _this.runcmdAs=runcmdAs_delegate(fun uuid a->(uuid,a)|>api.runcmdAs)
             member _this.sendSimpleForm=sendSimpleForm_delegate(fun uuid title content buttons->(uuid,title,content,buttons)|>api.sendSimpleForm)
-            member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->(uuid,title,content,button1,button2)|>api.sendModalForm)
+             member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->(uuid,title,content,button1,button2)|>api.sendModalForm)
             member _this.sendCustomForm=sendCustomForm_delegate(fun uuid json->(uuid,json)|>api.sendCustomForm)
             member _this.releaseForm=releaseForm_delegate(fun formid->formid|>api.releaseForm)
             member this.setPlayerSidebar=setPlayerSidebar_delegate(fun uuid title list->
@@ -405,14 +443,13 @@ module NativeFunc=
                     let mutable result=System.String.Empty
                     let data = api.selectPlayer(uuid)
                     if data|>System.String.IsNullOrEmpty|>not then
-                        let pinfo=Newtonsoft.Json.JsonConvert.DeserializeObject<System.Collections.Generic.Dictionary<string, obj>>(data)
-                        if pinfo|>isNull|>not then
-                            let mutable pptr:obj=null
-                            if pinfo.TryGetValue("playerptr",ref pptr) then
-                                let mutable ptr = pptr|>System.Convert.ToInt64|>System.IntPtr
-                                if ptr <> System.IntPtr.Zero then
-                                    let ipport=(new CsPlayer(api, ptr)).IpPort
-                                    result<-ipport.Substring(0, ipport.IndexOf('|'))
+                        let pinfo=Newtonsoft.Json.Linq.JObject.Parse(data)
+                        if pinfo.ContainsKey("playerptr") then
+                            let mutable ptr = pinfo.["playerptr"]|>System.Convert.ToInt64|>System.IntPtr
+                            if ptr <> System.IntPtr.Zero then
+                                let ipport=(new CsPlayer(api, ptr)).IpPort
+                                Console.WriteLine(ipport)
+                                result<-ipport.Substring(0, ipport.IndexOf('|'))
                     result
                 ))
 

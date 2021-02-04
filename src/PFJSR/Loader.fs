@@ -8,9 +8,16 @@ module Loader=
         member this.Path :string=p
     let mutable LoadedScripts:list<ScriptItemModel>=[] 
     let LoadJSRScript(filePath:string)=
+        let scriptName=filePath|>Path.GetFileNameWithoutExtension
         try
-            let scriptName=filePath|>Path.GetFileNameWithoutExtension
-            let engine=new Jint.Engine()
+            let options=new Jint.Options()
+            options.AllowClr()|>ignore
+            options.AllowClr(typeof<FSharp.Reflection.FSharpType>.Assembly)|>ignore
+            options.AllowClr(typeof<Colorful.Console>.Assembly)|>ignore
+            options.AllowClr(typeof<Jint.Engine>.Assembly)|>ignore
+            options.AllowClr(typeof<Newtonsoft.Json.JsonConvert>.Assembly)|>ignore
+            options.AllowClr(typeof<Alba.CsConsoleFormat.Absolute>.Assembly)|>ignore
+            let engine=new Jint.Engine(options)
             (
                 engine,
                 (filePath|>File.ReadAllText),
@@ -18,4 +25,4 @@ module Loader=
             )|>JSR.CreateEngine|>ignore
             LoadedScripts<-new ScriptItemModel (scriptName, filePath)::LoadedScripts
             scriptName+"加载完成！"|>Console.WriteLine
-        with ex->ex.ToString()|>Console.WriteLine
+        with ex->($"\"{scriptName}\"加载失败！",ex)|>Console.WriteLineErr

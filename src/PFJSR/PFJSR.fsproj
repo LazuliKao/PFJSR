@@ -5,7 +5,7 @@
     <TargetFramework>net461</TargetFramework>
     <AssemblyName>PFJSR.csr</AssemblyName>
     <OutputPath>..\..\..\CSR\CSRDll\</OutputPath>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Alba.CsConsoleFormat.ColorfulConsole-NoXaml" Version="1.0.0" />
+    <PackageReference Include="Alba.CsConsoleFormat" Version="1.0.0" />
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
     <PackageReference Include="Costura.Fody" Version="4.1.0" />
     <PackageReference Include="Fody" Version="6.1.0">
