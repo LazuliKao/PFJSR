@@ -6,6 +6,7 @@ open System.Threading.Tasks
 open API
 open CSR
 open type Newtonsoft.Json.JsonConvert
+open Newtonsoft.Json.Linq
 
 module NativeFunc=
     module Basic=
@@ -129,6 +130,12 @@ module NativeFunc=
         type Instance(scriptName:string,engine:Jint.Engine) =
             let BeforeActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
             let AfterActListeners =new System.Collections.Generic.Dictionary<int,MCCSAPI.EventCab>()
+            let CheckUuid(uuid:string )=
+                if System.String.IsNullOrWhiteSpace(uuid) then
+                    let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                    let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了无效的\"{uuid}\"！"
+                    err|>Console.WriteLine
+                    err|>failwith 
             let AssertCommercial(fn:string)=
                 if not api.COMMERCIAL then
                     let err = $"获取方法\"{fn}\"失败，社区版不支持该方法！"
@@ -194,6 +201,10 @@ module NativeFunc=
                         (
                             try
                                 e|>BaseEvent.getFrom|>SerializeObject|>f.Invoke|>false.Equals|>not
+                                //let got=e|>BaseEvent.getFrom
+                                //let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
+                                //e.Add("result",new JValue( got.RESULT):>JToken)
+                                //e.ToString()|>f.Invoke|>false.Equals|>not
                             with ex->
                             (
                                 try
@@ -214,7 +225,10 @@ module NativeFunc=
                     let fullFunc=MCCSAPI.EventCab(fun e->
                         (
                             try
-                                e|>BaseEvent.getFrom|>SerializeObject|>f.Invoke|>false.Equals|>not
+                                let got=e|>BaseEvent.getFrom
+                                let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
+                                e.Add("result",new JValue( got.RESULT):>JToken)
+                                e.ToString(Newtonsoft.Json.Formatting.None)|>f.Invoke|>false.Equals|>not
                             with ex->
                             (
                                 try
@@ -303,86 +317,102 @@ module NativeFunc=
                     (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
                 )
             )
-            member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->(uuid,name)|>api.reNameByUuid)
+            member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid)
             member this.getPlayerAbilities =getPlayerAbilities_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.getPlayerAbilities|>AssertCommercial
                     uuid|>api.getPlayerAbilities
                 ))
             member this.setPlayerAbilities =setPlayerAbilities_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid
                     nameof this.setPlayerAbilities|>AssertCommercial
                     (uuid,a)|>api.setPlayerAbilities
                 ))
             member this.getPlayerAttributes =getPlayerAttributes_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.getPlayerAttributes|>AssertCommercial
                     uuid|>api.getPlayerAttributes
                 ))
             member this.setPlayerTempAttributes =setPlayerTempAttributes_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid
                     nameof this.setPlayerTempAttributes|>AssertCommercial
                     (uuid,a)|>api.setPlayerTempAttributes
                 ))
             member this.getPlayerMaxAttributes =getPlayerMaxAttributes_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.getPlayerMaxAttributes|>AssertCommercial
                     uuid|>api.getPlayerMaxAttributes
                 ))
             member this.setPlayerMaxAttributes =setPlayerMaxAttributes_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid
                     nameof this.setPlayerMaxAttributes|>AssertCommercial
                     (uuid,a)|>api.setPlayerMaxAttributes
                 ))
             member this.getPlayerItems =getPlayerItems_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.getPlayerItems|>AssertCommercial
                     uuid|>api.getPlayerItems
                 ))
             member this.getPlayerSelectedItem =getPlayerSelectedItem_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.getPlayerSelectedItem|>AssertCommercial
                     uuid|>api.getPlayerSelectedItem
                 ))
             member this.setPlayerItems =setPlayerItems_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid
                     nameof this.setPlayerItems|>AssertCommercial
                     (uuid,a)|>api.setPlayerItems
                 ))
             member this.addPlayerItemEx =addPlayerItemEx_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid
                     nameof this.addPlayerItemEx|>AssertCommercial
                     (uuid,a)|>api.addPlayerItemEx
                 ))
-            member _this.addPlayerItem =addPlayerItem_delegate(fun uuid id aux count->(uuid,id,aux,count)|>api.addPlayerItem)
+            member _this.addPlayerItem =addPlayerItem_delegate(fun uuid id aux count->uuid|>CheckUuid;(uuid,id,aux,count)|>api.addPlayerItem)
             member this.getPlayerEffects =getPlayerEffects_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.getPlayerEffects|>AssertCommercial
                     uuid|>api.getPlayerEffects
                 ))
             member this.setPlayerEffects=setPlayerEffects_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid
                     nameof this.setPlayerEffects|>AssertCommercial
                     (uuid,a)|>api.setPlayerEffects
                 ))
             member this.setPlayerBossBar=setPlayerBossBar_delegate(fun uuid title percent->
                 (
+                    uuid|>CheckUuid
                     nameof this.setPlayerBossBar|>AssertCommercial
                     (uuid,title,percent)|>api.setPlayerBossBar
                 ))
             member this.removePlayerBossBar=removePlayerBossBar_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid
                     nameof this.removePlayerBossBar|>AssertCommercial
                     uuid|>api.removePlayerBossBar
                 ))
             member _this.selectPlayer=selectPlayer_delegate(fun uuid->uuid|>api.selectPlayer)
             member this.transferserver=transferserver_delegate(fun uuid addr port->
                 (
+                    uuid|>CheckUuid
                     nameof this.transferserver|>AssertCommercial
                     (uuid, addr, port)|>api.transferserver
                 ))
             member this.teleport=teleport_delegate(fun uuid x y z did->
                 (
+                    uuid|>CheckUuid
                     //try
                     //    {
                     //        const string key = ;
@@ -408,38 +438,46 @@ module NativeFunc=
                             (uuid,x,y,z,did)|>api.teleport
                         else result
                 ))
-            member _this.talkAs=talkAs_delegate(fun uuid a->(uuid,a)|>api.talkAs)
-            member _this.runcmdAs=runcmdAs_delegate(fun uuid a->(uuid,a)|>api.runcmdAs)
-            member _this.sendSimpleForm=sendSimpleForm_delegate(fun uuid title content buttons->(uuid,title,content,buttons)|>api.sendSimpleForm)
-             member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->(uuid,title,content,button1,button2)|>api.sendModalForm)
-            member _this.sendCustomForm=sendCustomForm_delegate(fun uuid json->(uuid,json)|>api.sendCustomForm)
+            member _this.talkAs=talkAs_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.talkAs)
+            member _this.runcmdAs=runcmdAs_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.runcmdAs)
+            member _this.sendSimpleForm=sendSimpleForm_delegate(fun uuid title content buttons->uuid|>CheckUuid;(uuid,title,content,buttons)|>api.sendSimpleForm)
+             member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->uuid|>CheckUuid;(uuid,title,content,button1,button2)|>api.sendModalForm)
+            member _this.sendCustomForm=sendCustomForm_delegate(fun uuid json->uuid|>CheckUuid;(uuid,json)|>api.sendCustomForm)
             member _this.releaseForm=releaseForm_delegate(fun formid->formid|>api.releaseForm)
             member this.setPlayerSidebar=setPlayerSidebar_delegate(fun uuid title list->
                 (
+                    uuid|>CheckUuid;
                     nameof this.setPlayerSidebar|>AssertCommercial
                     (uuid,title,list)|>api.setPlayerSidebar
                 ))
             member this.removePlayerSidebar=removePlayerSidebar_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid;
                     nameof this.removePlayerSidebar|>AssertCommercial
                     uuid|>api.removePlayerSidebar
                 ))
             member this.getPlayerPermissionAndGametype =getPlayerPermissionAndGametype_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid;
                     nameof this.getPlayerPermissionAndGametype|>AssertCommercial
                     uuid|>api.getPlayerPermissionAndGametype
                 ))
             member this.setPlayerPermissionAndGametype=setPlayerPermissionAndGametype_delegate(fun uuid a->
                 (
+                    uuid|>CheckUuid;
                     nameof this.setPlayerPermissionAndGametype|>AssertCommercial
                     (uuid,a)|>api.setPlayerPermissionAndGametype
                 ))
-            member _this.disconnectClient=disconnectClient_delegate(fun uuid a->(uuid,a)|>api.disconnectClient)
-            member _this.sendText=sendText_delegate(fun uuid a->(uuid,a)|>api.sendText)
-            member _this.getscoreboard=getscoreboard_delegate(fun uuid a->(uuid,a)|>api.getscoreboard)
-            member _this.setscoreboard=setscoreboard_delegate(fun uuid sname value->(uuid,sname,value)|>api.setscoreboard)
+            member _this.disconnectClient=disconnectClient_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.disconnectClient)
+            member _this.sendText=sendText_delegate(fun uuid a->
+                CheckUuid(uuid)
+                (uuid,a)|>api.sendText
+            )
+            member _this.getscoreboard=getscoreboard_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.getscoreboard)
+            member _this.setscoreboard=setscoreboard_delegate(fun uuid sname value->uuid|>CheckUuid;(uuid,sname,value)|>api.setscoreboard)
             member _this.getPlayerIP=getPlayerIP_delegate(fun uuid->
                 (
+                    uuid|>CheckUuid;
                     let mutable result=System.String.Empty
                     let data = api.selectPlayer(uuid)
                     if data|>System.String.IsNullOrEmpty|>not then

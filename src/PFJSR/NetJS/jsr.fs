@@ -24,8 +24,6 @@ module JSR=
                                            NativeFunc.Basic.mkdir)|>eng.SetValue|>ignore
         (new JsString(nameof NativeFunc.Basic.getWorkingPath),
                                            NativeFunc.Basic.getWorkingPath)|>eng.SetValue|>ignore
-        //(new JsString(nameof core.setTimeout),
-        //                                   core.setTimeout)|>eng.SetValue|>ignore
         //核心玩法
         for item in core.GetType().GetProperties() do
              (new JsString(item.Name),
