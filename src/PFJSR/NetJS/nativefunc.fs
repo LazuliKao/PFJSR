@@ -136,8 +136,9 @@ module NativeFunc=
                     let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了无效的\"{uuid}\"！"
                     err|>Console.WriteLine
                     err|>failwith 
-            let AssertCommercial(fn:string)=
+            let AssertCommercial()=
                 if not api.COMMERCIAL then
+                    let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                     let err = $"获取方法\"{fn}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
@@ -276,12 +277,12 @@ module NativeFunc=
                 ))
             member this.getStructure =getStructure_delegate(fun did posa posb exent exblk->
                 (
-                    nameof this.getStructure|>AssertCommercial
+                    AssertCommercial()
                     (did, posa, posb, exent, exblk)|>api.getStructure
                 ))
             member this.setStructure =setStructure_delegate(fun jdata did jsonposa rot exent exblk->
                 (
-                    nameof this.setStructure|>AssertCommercial
+                    AssertCommercial()
                     (jdata, did, jsonposa, rot, exent, exblk)|>api.setStructure
                 ))
             member _this.setServerMotd=setServerMotd_delegate(fun motd isShow->(motd, isShow)|>api.setServerMotd)
@@ -320,94 +321,79 @@ module NativeFunc=
             member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid)
             member this.getPlayerAbilities =getPlayerAbilities_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.getPlayerAbilities|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerAbilities
                 ))
             member this.setPlayerAbilities =setPlayerAbilities_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid
-                    nameof this.setPlayerAbilities|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.setPlayerAbilities
                 ))
             member this.getPlayerAttributes =getPlayerAttributes_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.getPlayerAttributes|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerAttributes
                 ))
             member this.setPlayerTempAttributes =setPlayerTempAttributes_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid
-                    nameof this.setPlayerTempAttributes|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.setPlayerTempAttributes
                 ))
             member this.getPlayerMaxAttributes =getPlayerMaxAttributes_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.getPlayerMaxAttributes|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerMaxAttributes
                 ))
             member this.setPlayerMaxAttributes =setPlayerMaxAttributes_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid
-                    nameof this.setPlayerMaxAttributes|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.setPlayerMaxAttributes
                 ))
             member this.getPlayerItems =getPlayerItems_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.getPlayerItems|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerItems
                 ))
             member this.getPlayerSelectedItem =getPlayerSelectedItem_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.getPlayerSelectedItem|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerSelectedItem
                 ))
             member this.setPlayerItems =setPlayerItems_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid
-                    nameof this.setPlayerItems|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.setPlayerItems
                 ))
             member this.addPlayerItemEx =addPlayerItemEx_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid
-                    nameof this.addPlayerItemEx|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.addPlayerItemEx
                 ))
             member _this.addPlayerItem =addPlayerItem_delegate(fun uuid id aux count->uuid|>CheckUuid;(uuid,id,aux,count)|>api.addPlayerItem)
             member this.getPlayerEffects =getPlayerEffects_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.getPlayerEffects|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerEffects
                 ))
             member this.setPlayerEffects=setPlayerEffects_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid
-                    nameof this.setPlayerEffects|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.setPlayerEffects
                 ))
             member this.setPlayerBossBar=setPlayerBossBar_delegate(fun uuid title percent->
                 (
-                    uuid|>CheckUuid
-                    nameof this.setPlayerBossBar|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,title,percent)|>api.setPlayerBossBar
                 ))
             member this.removePlayerBossBar=removePlayerBossBar_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid
-                    nameof this.removePlayerBossBar|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.removePlayerBossBar
                 ))
             member _this.selectPlayer=selectPlayer_delegate(fun uuid->uuid|>api.selectPlayer)
             member this.transferserver=transferserver_delegate(fun uuid addr port->
                 (
-                    uuid|>CheckUuid
-                    nameof this.transferserver|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid, addr, port)|>api.transferserver
                 ))
             member this.teleport=teleport_delegate(fun uuid x y z did->
@@ -434,7 +420,7 @@ module NativeFunc=
                             let org = System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr):?>System.Func<string,single,single,single,int,bool>
                             result<- ((uuid,x,y,z,did)|>org.Invoke )
                         if result|>not then
-                            nameof this.teleport|>AssertCommercial
+                            AssertCommercial()
                             (uuid,x,y,z,did)|>api.teleport
                         else result
                 ))
@@ -446,26 +432,22 @@ module NativeFunc=
             member _this.releaseForm=releaseForm_delegate(fun formid->formid|>api.releaseForm)
             member this.setPlayerSidebar=setPlayerSidebar_delegate(fun uuid title list->
                 (
-                    uuid|>CheckUuid;
-                    nameof this.setPlayerSidebar|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,title,list)|>api.setPlayerSidebar
                 ))
             member this.removePlayerSidebar=removePlayerSidebar_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid;
-                    nameof this.removePlayerSidebar|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.removePlayerSidebar
                 ))
             member this.getPlayerPermissionAndGametype =getPlayerPermissionAndGametype_delegate(fun uuid->
                 (
-                    uuid|>CheckUuid;
-                    nameof this.getPlayerPermissionAndGametype|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     uuid|>api.getPlayerPermissionAndGametype
                 ))
             member this.setPlayerPermissionAndGametype=setPlayerPermissionAndGametype_delegate(fun uuid a->
                 (
-                    uuid|>CheckUuid;
-                    nameof this.setPlayerPermissionAndGametype|>AssertCommercial
+                    uuid|>CheckUuid;AssertCommercial()
                     (uuid,a)|>api.setPlayerPermissionAndGametype
                 ))
             member _this.disconnectClient=disconnectClient_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.disconnectClient)
