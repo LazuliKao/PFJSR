@@ -19,3 +19,5 @@ module Console=
             new Formatter(ex.Message, Color.Orange),
             new Formatter(ex.StackTrace, Color.Gray)
         )
+    let log(content:string)=
+        (System.Console.WriteLine(content))
