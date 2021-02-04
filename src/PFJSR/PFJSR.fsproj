@@ -5,7 +5,11 @@
     <TargetFramework>net461</TargetFramework>
     <AssemblyName>PFJSR.csr</AssemblyName>
     <OutputPath>..\..\..\CSR\CSRDll\</OutputPath>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
+    <Authors>littlegao</Authors>
+    <Company>PixelFaramitaTeam</Company>
+    <NeutralLanguage>zh</NeutralLanguage>
+    <PackageProjectUrl>https://github.com/littlegao233/PFJSR</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
