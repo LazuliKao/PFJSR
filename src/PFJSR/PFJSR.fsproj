@@ -15,10 +15,10 @@
   <ItemGroup>
     <Compile Include="API.fs" />
     <Compile Include="Console.fs" />
+    <Compile Include="Data.fs" />
     <Compile Include="NetJS\nativefunc.fs" />
     <Compile Include="NetJS\jsr.fs" />
     <Compile Include="Loader.fs" />
-    <Compile Include="Data.fs" />
     <Compile Include="Plugin.fs" />
     <Compile Include="CSR.fs" />
   </ItemGroup>

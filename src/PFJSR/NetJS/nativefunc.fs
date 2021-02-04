@@ -133,9 +133,15 @@ module NativeFunc=
             let CheckUuid(uuid:string )=
                 if System.String.IsNullOrWhiteSpace(uuid) then
                     let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
-                    let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了无效的\"{uuid}\"！"
+                    let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了空的uuid！"
                     err|>Console.WriteLine
                     err|>failwith 
+                if Data.Config.JSR.CheckUuid then
+                    if (uuid,"^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$")|>System.Text.RegularExpressions.Regex.IsMatch|>not then
+                        let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                        let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了无效的uuid:\"{uuid}\"！"
+                        err|>Console.WriteLine
+                        err|>failwith
             let AssertCommercial()=
                 if not api.COMMERCIAL then
                     let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name

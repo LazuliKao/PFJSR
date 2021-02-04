@@ -13,8 +13,10 @@ module Data=
     type ConfigJSRModel() = 
         let mutable _Enable : bool  = true
         let mutable _Path : string  = "PFJS"
+        let mutable _CheckUUID : bool  = true
         member this.Enable with get() =_Enable and set value  =_Enable<-value
         member this.Path with get() =_Path and set value  =_Path<-value
+        member this.CheckUuid with get() =_CheckUUID and set value  =_CheckUUID<-value
     type ConfigModel() =
         let mutable _JSR= new ConfigJSRModel()
         //let mutable _NativeScripts= new ConfigNativeScriptsModel()
