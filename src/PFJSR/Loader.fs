@@ -16,7 +16,6 @@ module Loader=
             options.AllowClr(typeof<Colorful.Console>.Assembly)|>ignore
             options.AllowClr(typeof<Jint.Engine>.Assembly)|>ignore
             options.AllowClr(typeof<Newtonsoft.Json.JsonConvert>.Assembly)|>ignore
-            options.AllowClr(typeof<Alba.CsConsoleFormat.Absolute>.Assembly)|>ignore
             let engine=new Jint.Engine(options)
             (
                 engine,
