@@ -127,17 +127,15 @@ module NativeFunc=
         type setTimeout_delegate = delegate of obj*int -> unit
         type runScript_delegate = delegate of obj -> unit
         type Instance(scriptName:string,engine:Jint.Engine) =
-            let CheckUuid(uuid:string )=
+            let CheckUuid(uuid:string)=
                 if System.String.IsNullOrWhiteSpace(uuid) then
                     let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
-                    let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了空的uuid！"
-                    err|>Console.WriteLine
-                    err|>failwith 
+                    let err = $"在脚本\"{scriptName}\"调用\"{funcname.Remove(funcname.Length-4)}\"方法时使用了空的uuid！"
+                    err|>failwith
                 if Data.Config.JSR.CheckUuid then
                     if (uuid,"^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$")|>System.Text.RegularExpressions.Regex.IsMatch|>not then
                         let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
-                        let err = $"在脚本\"{scriptName}\"调用\"{funcname}\"函数时使用了无效的uuid:\"{uuid}\"！"
-                        err|>Console.WriteLine
+                        let err = $"在脚本\"{scriptName}\"调用\"{funcname.Remove(funcname.Length-4)}\"方法时使用了无效的uuid:\"{uuid}\"！"
                         err|>failwith
             let AssertCommercial()=
                 if not api.COMMERCIAL then
@@ -145,14 +143,8 @@ module NativeFunc=
                     let err = $"获取方法\"{fn}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
-            let InvokeRemoveFailed(a1:string ,a2:string)= 
-                ("在脚本\""+scriptName+"\"执行\""+a1+"\"无效",new exn( "参数2的值仅可以通过\""+a2+"\"结果获得"))|>Console.WriteLineErr
-            let getPlayerAbilities_fun(uuid:string)= 
-                uuid|>CheckUuid;AssertCommercial()
-                uuid|>api.getPlayerAbilities
-            (*!
-            233
-            *)   
+            let InvokeRemoveFailed(a1:string)= 
+                ("在脚本\""+scriptName+"\"执行\"remove"+a1+"ActListener\"无效",new exn( "参数2的值仅可以通过\"add"+a1+"ActListener\"结果获得"))|>Console.WriteLineErr
             let _BeforeActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
             let _AfterActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
             let setTimeout_fun(o:obj)(ms:int)= 
@@ -245,8 +237,8 @@ module NativeFunc=
                         (k, getFunc )|>api.removeBeforeActListener|>ignore
                         _BeforeActListeners.Remove(item)|>ignore
                     else
-                        InvokeRemoveFailed("","")
-                with _->  InvokeRemoveFailed("","")
+                        InvokeRemoveFailed("Before")
+                with _->  InvokeRemoveFailed("Before")
             let removeAfterActListener_fun(k)(fhash)=
                 try
                      let index=_AfterActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
@@ -256,8 +248,8 @@ module NativeFunc=
                             (k, getFunc )|>api.removeAfterActListener|>ignore
                             _AfterActListeners.Remove(item)|>ignore
                      else
-                            InvokeRemoveFailed("","")
-                with _->InvokeRemoveFailed("","")
+                            InvokeRemoveFailed("After")
+                with _->InvokeRemoveFailed("After")
             let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
             let runcmd_fun(cmd)=cmd|>api.runcmd
             let logout_fun(l)=l|>api.logout
@@ -273,16 +265,15 @@ module NativeFunc=
             let setServerMotd_fun(motd)(isShow)=(motd, isShow)|>api.setServerMotd
             let JSErunScript_fun(js)(cb:System.Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
-                (
-                try
-                    cb.Invoke(result)
-                with ex->
-                    (
                     try
-                    ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
-                    with _->()
-                    )
-                ))
+                        cb.Invoke(result)
+                    with ex->
+                        (
+                        try
+                        ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
+                        with _->()
+                        )
+                )
                 (js,fullFunc)|>api.JSErunScript
             let JSEfireCustomEvent_fun(ename)(jdata)(cb:System.Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
@@ -297,6 +288,111 @@ module NativeFunc=
                         )
                     ))
                 (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
+            let reNameByUuid_fun(uuid)(name)=uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid
+            let getPlayerAbilities_fun(uuid:string)= 
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerAbilities
+            let setPlayerAbilities_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.setPlayerAbilities
+            let getPlayerTempAttributes_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerAttributes
+            let setPlayerTempAttributes_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.setPlayerTempAttributes
+            let getPlayerMaxAttributes_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerMaxAttributes
+            let setPlayerMaxAttributes_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.setPlayerMaxAttributes
+            let getPlayerItems_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerItems
+            let getPlayerSelectedItem_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerSelectedItem
+            let setPlayerItems_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.setPlayerItems
+            let addPlayerItemEx_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.addPlayerItemEx
+            let addPlayerItem_fun(uuid)(id)(aux)(count)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,id,aux,count)|>api.addPlayerItem
+            let getPlayerEffects_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerEffects
+            let setPlayerEffects_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.setPlayerEffects
+            let setPlayerBossBar_fun(uuid)(title)(percent)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,title,percent)|>api.setPlayerBossBar
+            let removePlayerBossBar_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.removePlayerBossBar
+            let selectPlayer_fun(uuid)=uuid|>api.selectPlayer
+            let transferserver_fun(uuid)(addr)(port)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid, addr, port)|>api.transferserver
+            let teleport_fun(uuid)(x)(y)(z)(did)=
+                uuid|>CheckUuid
+                //try
+                //    {
+                //        const string key = ;
+                //        IntPtr ptr = CsApi.getSharePtr(key);
+                //        if (ptr == IntPtr.Zero) { GetPFEssentialsApiFailedTips(key); }
+                //        else
+                //        {
+                //            Action<string,string> org = (Action<string,string>)System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr);
+                //            org.Invoke(name,cmd);
+                //        }
+                //}
+                //catch { }
+                if  api.COMMERCIAL then
+                    (uuid,x,y,z,did)|>api.teleport
+                else
+                    let ptr:System.IntPtr=api.getSharePtr("PFEssentials.PublicApi.V2.Teleport") 
+                    let mutable result=false
+                    if ptr <> System.IntPtr.Zero then
+                        let org = System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr):?>System.Func<string,single,single,single,int,bool>
+                        result<- ((uuid,x,y,z,did)|>org.Invoke )
+                    if result|>not then
+                        AssertCommercial()
+                        (uuid,x,y,z,did)|>api.teleport
+                    else result
+            let setPlayerSidebar_fun(uuid)(title)(list)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,title,list)|>api.setPlayerSidebar
+            let removePlayerSidebar_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.removePlayerSidebar
+            let getPlayerPermissionAndGametype_fun(uuid)=
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerPermissionAndGametype
+            let setPlayerPermissionAndGametype_fun(uuid)(a)=
+                uuid|>CheckUuid;AssertCommercial()
+                (uuid,a)|>api.setPlayerPermissionAndGametype
+            let disconnectClient_fun(uuid)(msg)=uuid|>CheckUuid;(uuid,msg)|>api.disconnectClient
+            let sendText_fun(uuid)(msg)=uuid|>CheckUuid;(uuid,msg)|>api.sendText
+            let getscoreboard_fun(uuid)(a)=uuid|>CheckUuid;(uuid,a)|>api.getscoreboard
+            let setscoreboard_fun(uuid)(sname)(value)=uuid|>CheckUuid;(uuid,sname,value)|>api.setscoreboard
+            let getPlayerIP_fun(uuid)=
+                uuid|>CheckUuid;
+                let mutable result=System.String.Empty
+                let data = api.selectPlayer(uuid)
+                if data|>System.String.IsNullOrEmpty|>not then
+                    let pinfo=Newtonsoft.Json.Linq.JObject.Parse(data)
+                    if pinfo.ContainsKey("playerptr") then
+                        let mutable ptr = pinfo.["playerptr"]|>System.Convert.ToInt64|>System.IntPtr
+                        if ptr <> System.IntPtr.Zero then
+                            let ipport=(new CsPlayer(api, ptr)).IpPort
+                            Console.WriteLine(ipport)
+                            result<-ipport.Substring(0, ipport.IndexOf('|'))
+                result
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -317,154 +413,38 @@ module NativeFunc=
             member _this.setServerMotd=setServerMotd_delegate(setServerMotd_fun)
             member _this.JSErunScript=JSErunScript_delegate(JSErunScript_fun)
             member _this.JSEfireCustomEvent=JSEfireCustomEvent_delegate(JSEfireCustomEvent_fun)
-            member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid)
-            member this.getPlayerAbilities =getPlayerAbilities_delegate(getPlayerAbilities_fun)
-            member this.setPlayerAbilities =setPlayerAbilities_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.setPlayerAbilities
-                ))
-            member this.getPlayerAttributes =getPlayerAttributes_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerAttributes
-                ))
-            member this.setPlayerTempAttributes =setPlayerTempAttributes_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.setPlayerTempAttributes
-                ))
-            member this.getPlayerMaxAttributes =getPlayerMaxAttributes_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerMaxAttributes
-                ))
-            member this.setPlayerMaxAttributes =setPlayerMaxAttributes_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.setPlayerMaxAttributes
-                ))
-            member this.getPlayerItems =getPlayerItems_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerItems
-                ))
-            member this.getPlayerSelectedItem =getPlayerSelectedItem_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerSelectedItem
-                ))
-            member this.setPlayerItems =setPlayerItems_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.setPlayerItems
-                ))
-            member this.addPlayerItemEx =addPlayerItemEx_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.addPlayerItemEx
-                ))
-            member _this.addPlayerItem =addPlayerItem_delegate(fun uuid id aux count->uuid|>CheckUuid;(uuid,id,aux,count)|>api.addPlayerItem)
-            member this.getPlayerEffects =getPlayerEffects_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerEffects
-                ))
-            member this.setPlayerEffects=setPlayerEffects_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.setPlayerEffects
-                ))
-            member this.setPlayerBossBar=setPlayerBossBar_delegate(fun uuid title percent->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,title,percent)|>api.setPlayerBossBar
-                ))
-            member this.removePlayerBossBar=removePlayerBossBar_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.removePlayerBossBar
-                ))
-            member _this.selectPlayer=selectPlayer_delegate(fun uuid->uuid|>api.selectPlayer)
-            member this.transferserver=transferserver_delegate(fun uuid addr port->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid, addr, port)|>api.transferserver
-                ))
-            member this.teleport=teleport_delegate(fun uuid x y z did->
-                (
-                    uuid|>CheckUuid
-                    //try
-                    //    {
-                    //        const string key = ;
-                    //        IntPtr ptr = CsApi.getSharePtr(key);
-                    //        if (ptr == IntPtr.Zero) { GetPFEssentialsApiFailedTips(key); }
-                    //        else
-                    //        {
-                    //            Action<string,string> org = (Action<string,string>)System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr);
-                    //            org.Invoke(name,cmd);
-                    //        }
-                    //}
-                    //catch { }
-                    if  api.COMMERCIAL then
-                        (uuid,x,y,z,did)|>api.teleport
-                    else
-                        let ptr:System.IntPtr=api.getSharePtr("PFEssentials.PublicApi.V2.Teleport") 
-                        let mutable result=false
-                        if ptr <> System.IntPtr.Zero then
-                            let org = System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr):?>System.Func<string,single,single,single,int,bool>
-                            result<- ((uuid,x,y,z,did)|>org.Invoke )
-                        if result|>not then
-                            AssertCommercial()
-                            (uuid,x,y,z,did)|>api.teleport
-                        else result
-                ))
+            member _this.reNameByUuid=reNameByUuid_delegate(reNameByUuid_fun)
+            member _this.getPlayerAbilities =getPlayerAbilities_delegate(getPlayerAbilities_fun)
+            member _this.setPlayerAbilities =setPlayerAbilities_delegate(setPlayerAbilities_fun)
+            member _this.getPlayerAttributes =getPlayerAttributes_delegate(getPlayerTempAttributes_fun)
+            member _this.setPlayerTempAttributes =setPlayerTempAttributes_delegate(setPlayerTempAttributes_fun)
+            member _this.getPlayerMaxAttributes =getPlayerMaxAttributes_delegate(getPlayerMaxAttributes_fun)
+            member _this.setPlayerMaxAttributes =setPlayerMaxAttributes_delegate(setPlayerMaxAttributes_fun)
+            member _this.getPlayerItems =getPlayerItems_delegate(getPlayerItems_fun)
+            member _this.getPlayerSelectedItem =getPlayerSelectedItem_delegate(getPlayerSelectedItem_fun)
+            member _this.setPlayerItems =setPlayerItems_delegate(setPlayerItems_fun)
+            member _this.addPlayerItemEx =addPlayerItemEx_delegate(addPlayerItemEx_fun)
+            member _this.addPlayerItem =addPlayerItem_delegate(addPlayerItem_fun)
+            member _this.getPlayerEffects =getPlayerEffects_delegate(getPlayerEffects_fun)
+            member _this.setPlayerEffects=setPlayerEffects_delegate(setPlayerEffects_fun)
+            member _this.setPlayerBossBar=setPlayerBossBar_delegate(setPlayerBossBar_fun)
+            member _this.removePlayerBossBar=removePlayerBossBar_delegate(removePlayerBossBar_fun)
+            member _this.selectPlayer=selectPlayer_delegate(selectPlayer_fun)
+            member _this.transferserver=transferserver_delegate(transferserver_fun)
+            member _this.teleport=teleport_delegate(teleport_fun)
             member _this.talkAs=talkAs_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.talkAs)
             member _this.runcmdAs=runcmdAs_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.runcmdAs)
             member _this.sendSimpleForm=sendSimpleForm_delegate(fun uuid title content buttons->uuid|>CheckUuid;(uuid,title,content,buttons)|>api.sendSimpleForm)
              member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->uuid|>CheckUuid;(uuid,title,content,button1,button2)|>api.sendModalForm)
             member _this.sendCustomForm=sendCustomForm_delegate(fun uuid json->uuid|>CheckUuid;(uuid,json)|>api.sendCustomForm)
             member _this.releaseForm=releaseForm_delegate(fun formid->formid|>api.releaseForm)
-            member this.setPlayerSidebar=setPlayerSidebar_delegate(fun uuid title list->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,title,list)|>api.setPlayerSidebar
-                ))
-            member this.removePlayerSidebar=removePlayerSidebar_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.removePlayerSidebar
-                ))
-            member this.getPlayerPermissionAndGametype =getPlayerPermissionAndGametype_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerPermissionAndGametype
-                ))
-            member this.setPlayerPermissionAndGametype=setPlayerPermissionAndGametype_delegate(fun uuid a->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    (uuid,a)|>api.setPlayerPermissionAndGametype
-                ))
-            member _this.disconnectClient=disconnectClient_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.disconnectClient)
-            member _this.sendText=sendText_delegate(fun uuid a->
-                CheckUuid(uuid)
-                (uuid,a)|>api.sendText
-            )
-            member _this.getscoreboard=getscoreboard_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.getscoreboard)
-            member _this.setscoreboard=setscoreboard_delegate(fun uuid sname value->uuid|>CheckUuid;(uuid,sname,value)|>api.setscoreboard)
-            member _this.getPlayerIP=getPlayerIP_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;
-                    let mutable result=System.String.Empty
-                    let data = api.selectPlayer(uuid)
-                    if data|>System.String.IsNullOrEmpty|>not then
-                        let pinfo=Newtonsoft.Json.Linq.JObject.Parse(data)
-                        if pinfo.ContainsKey("playerptr") then
-                            let mutable ptr = pinfo.["playerptr"]|>System.Convert.ToInt64|>System.IntPtr
-                            if ptr <> System.IntPtr.Zero then
-                                let ipport=(new CsPlayer(api, ptr)).IpPort
-                                Console.WriteLine(ipport)
-                                result<-ipport.Substring(0, ipport.IndexOf('|'))
-                    result
-                ))
+            member _this.setPlayerSidebar=setPlayerSidebar_delegate(setPlayerSidebar_fun)
+            member _this.removePlayerSidebar=removePlayerSidebar_delegate(removePlayerSidebar_fun)
+            member _this.getPlayerPermissionAndGametype =getPlayerPermissionAndGametype_delegate(getPlayerPermissionAndGametype_fun)
+            member _this.setPlayerPermissionAndGametype=setPlayerPermissionAndGametype_delegate(setPlayerPermissionAndGametype_fun)
+            member _this.disconnectClient=disconnectClient_delegate(disconnectClient_fun)
+            member _this.sendText=sendText_delegate(sendText_fun)
+            member _this.getscoreboard=getscoreboard_delegate(getscoreboard_fun)
+            member _this.setscoreboard=setscoreboard_delegate(setscoreboard_fun)
+            member _this.getPlayerIP=getPlayerIP_delegate(getPlayerIP_fun)
 

@@ -3,9 +3,9 @@ open Jint.Native
 open Jint
 module JSR=
     type JSRunner(_engine:Engine,_js:string,_core:NativeFunc.Core.Instance) = 
-        member this.eng with get() =_engine  
-        member this.js with get() =_js 
-        member this.core with get() =_core  
+        member _this.eng with get() =_engine  
+        member _this.js with get() =_js 
+        member _this.core with get() =_core  
     let mutable RunnerList:list<JSRunner>=[]
     let CreateEngine(eng:Engine,js:string,core:NativeFunc.Core.Instance):Engine=
         RunnerList<-new JSRunner(eng,js,core) :: RunnerList
