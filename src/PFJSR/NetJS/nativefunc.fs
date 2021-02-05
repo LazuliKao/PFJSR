@@ -148,8 +148,6 @@ module NativeFunc=
             let InvokeRemoveFailed(a1:string ,a2:string)= 
                 ("在脚本\""+scriptName+"\"执行\""+a1+"\"无效",new exn( "参数2的值仅可以通过\""+a2+"\"结果获得"))|>Console.WriteLineErr
             let getPlayerAbilities_fun(uuid:string)= 
-                for ix in (new System.Diagnostics.StackTrace(true)).GetFrames() do
-                    Console.WriteLine(ix.ToString())
                 uuid|>CheckUuid;AssertCommercial()
                 uuid|>api.getPlayerAbilities
             (*!
@@ -197,139 +195,128 @@ module NativeFunc=
                                 ) 
                         with _-> ()
                     )|>ignore
+            let addBeforeActListener_fun(k)(f:System.Func<string,obj>)=
+                let fullFunc=MCCSAPI.EventCab(fun e->
+                    (
+                        try
+                            e|>BaseEvent.getFrom|>SerializeObject|>f.Invoke|>false.Equals|>not
+                            //let got=e|>BaseEvent.getFrom
+                            //let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
+                            //e.Add("result",new JValue( got.RESULT):>JToken)
+                            //e.ToString()|>f.Invoke|>false.Equals|>not
+                        with ex->
+                        (
+                            try
+                            ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"BeforeAct回调时遇到错误：",ex)|>Console.WriteLineErr
+                            with _->()
+                            true
+                        )
+                    ))
+                let funcHash=f.Method.GetHashCode()
+                _BeforeActListeners.Add(funcHash,k,fullFunc)
+                (k,fullFunc)|>api.addBeforeActListener|>ignore
+                funcHash
+            let addAfterActListener_fun(k)(f:System.Func<string,obj>)=
+                let fullFunc=MCCSAPI.EventCab(fun e->
+                    (
+                        try
+                            let got=e|>BaseEvent.getFrom
+                            let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
+                            e.Add("result",new JValue( got.RESULT):>JToken)
+                            e.ToString(Newtonsoft.Json.Formatting.None)|>f.Invoke|>false.Equals|>not
+                        with ex->
+                        (
+                            try
+                            ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
+                            with _->()
+                            true
+                        )
+                    ))
+                let funcHash=f.Method.GetHashCode()
+                _AfterActListeners.Add(funcHash,k,fullFunc)
+                (k,fullFunc)|>api.addAfterActListener|>ignore
+                funcHash
+            let removeBeforeActListener_fun(k)(fhash)=
+                try
+                    let index=_BeforeActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
+                    if index <> -1 then
+                        let item=_BeforeActListeners.[index]
+                        let (_,_,getFunc)=item
+                        (k, getFunc )|>api.removeBeforeActListener|>ignore
+                        _BeforeActListeners.Remove(item)|>ignore
+                    else
+                        InvokeRemoveFailed("","")
+                with _->  InvokeRemoveFailed("","")
+            let removeAfterActListener_fun(k)(fhash)=
+                try
+                     let index=_AfterActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
+                     if index <> -1 then
+                            let item=_AfterActListeners.[index]
+                            let (_,_,getFunc)=item
+                            (k, getFunc )|>api.removeAfterActListener|>ignore
+                            _AfterActListeners.Remove(item)|>ignore
+                     else
+                            InvokeRemoveFailed("","")
+                with _->InvokeRemoveFailed("","")
+            let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
+            let runcmd_fun(cmd)=cmd|>api.runcmd
+            let logout_fun(l)=l|>api.logout
+            let getOnLinePlayers_fun()= 
+                let result=api.getOnLinePlayers()
+                if result|>System.String.IsNullOrEmpty then "[]" else result
+            let getStructure_fun(did)(posa)(posb)(exent)(exblk)=
+                AssertCommercial()
+                (did,posa,posb,exent,exblk)|>api.getStructure
+            let setStructure_fun(jdata)(did)(jsonposa)(rot)(exent)(exblk)=
+                AssertCommercial()
+                (jdata,did,jsonposa,rot,exent,exblk)|>api.setStructure
+            let setServerMotd_fun(motd)(isShow)=(motd, isShow)|>api.setServerMotd
+            let JSErunScript_fun(js)(cb:System.Action<bool>)=
+                let fullFunc=MCCSAPI.JSECab(fun result->
+                (
+                try
+                    cb.Invoke(result)
+                with ex->
+                    (
+                    try
+                    ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
+                    with _->()
+                    )
+                ))
+                (js,fullFunc)|>api.JSErunScript
+            let JSEfireCustomEvent_fun(ename)(jdata)(cb:System.Action<bool>)=
+                let fullFunc=MCCSAPI.JSECab(fun result->
+                    (
+                    try
+                        cb.Invoke(result)
+                    with ex->
+                        (
+                        try
+                        ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
+                        with _->()
+                        )
+                    ))
+                (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
             member _this.runScript=runScript_delegate(runScript_fun)
             member _this.request=request_delegate(request_fun)
+            member _this.addBeforeActListener=addBeforeActListener_delegate(addBeforeActListener_fun)      
             member _this.setBeforeActListener=_this.addBeforeActListener
-            member _this.addBeforeActListener=
-                addBeforeActListener_delegate(fun k f-> 
-                (
-                    let fullFunc=MCCSAPI.EventCab(fun e->
-                        (
-                            try
-                                e|>BaseEvent.getFrom|>SerializeObject|>f.Invoke|>false.Equals|>not
-                                //let got=e|>BaseEvent.getFrom
-                                //let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
-                                //e.Add("result",new JValue( got.RESULT):>JToken)
-                                //e.ToString()|>f.Invoke|>false.Equals|>not
-                            with ex->
-                            (
-                                try
-                                ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"BeforeAct回调时遇到错误：",ex)|>Console.WriteLineErr
-                                with _->()
-                                true
-                            )
-                        ))
-                    let funcHash=f.Method.GetHashCode()
-                    _this.BeforeActListeners.Add(funcHash,k,fullFunc)
-                    (k,fullFunc)|>api.addBeforeActListener|>ignore
-                    funcHash
-                ))      
+            member _this.addAfterActListener=addAfterActListener_delegate(addAfterActListener_fun)  
             member _this.setAfterActListener=_this.addAfterActListener
-            member _this.addAfterActListener=
-                addAfterActListener_delegate(fun k f-> 
-                (
-                    let fullFunc=MCCSAPI.EventCab(fun e->
-                        (
-                            try
-                                let got=e|>BaseEvent.getFrom
-                                let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
-                                e.Add("result",new JValue( got.RESULT):>JToken)
-                                e.ToString(Newtonsoft.Json.Formatting.None)|>f.Invoke|>false.Equals|>not
-                            with ex->
-                            (
-                                try
-                                ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
-                                with _->()
-                                true
-                            )
-                        ))
-                    let funcHash=f.Method.GetHashCode()
-                    _this.AfterActListeners.Add(funcHash,k,fullFunc)
-                    (k,fullFunc)|>api.addAfterActListener|>ignore
-                    funcHash
-                ))  
-            member this.removeBeforeActListener=
-                removeBeforeActListener_delegate(fun k fhash-> 
-                (   
-                    try
-                        let index=this.BeforeActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
-                        if index <> -1 then
-                            let item=this.BeforeActListeners.[index]
-                            let (_,_,getFunc)=item
-                            (k, getFunc )|>api.removeBeforeActListener|>ignore
-                            this.BeforeActListeners.Remove(item)|>ignore
-                        else
-                            InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
-                    with _-> InvokeRemoveFailed(nameof(this.removeBeforeActListener),nameof(this.addBeforeActListener))
-              ))   
-            member this.removeAfterActListener=
-                removeAfterActListener_delegate(fun k fhash-> 
-                (   
-                    try
-                         let index=this.AfterActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
-                         if index <> -1 then
-                                let item=this.AfterActListeners.[index]
-                                let (_,_,getFunc)=item
-                                (k, getFunc )|>api.removeAfterActListener|>ignore
-                                this.AfterActListeners.Remove(item)|>ignore
-                         else
-                                InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
-                    with _->InvokeRemoveFailed(nameof(this.removeAfterActListener),nameof(this.addAfterActListener))
-                ))
-            member _this.setCommandDescribe=setCommandDescribe_delegate(fun c s->(c,s)|>api.setCommandDescribe)
-            member _this.runcmd=runcmd_delegate(fun cmd->cmd|>api.runcmd)
-            member _this.logout=logout_delegate(fun l->l|>api.logout)
-            member _this.getOnLinePlayers=getOnLinePlayers_delegate(fun ()->
-                (
-                    let result=api.getOnLinePlayers()
-                    if result|>System.String.IsNullOrEmpty then "[]" else result
-                ))
-            member this.getStructure =getStructure_delegate(fun did posa posb exent exblk->
-                (
-                    AssertCommercial()
-                    (did, posa, posb, exent, exblk)|>api.getStructure
-                ))
-            member this.setStructure =setStructure_delegate(fun jdata did jsonposa rot exent exblk->
-                (
-                    AssertCommercial()
-                    (jdata, did, jsonposa, rot, exent, exblk)|>api.setStructure
-                ))
-            member _this.setServerMotd=setServerMotd_delegate(fun motd isShow->(motd, isShow)|>api.setServerMotd)
-            member _this.JSErunScript=JSErunScript_delegate(fun js cb->
-                (
-                    let fullFunc=MCCSAPI.JSECab(fun result->
-                        (
-                        try
-                            cb.Invoke(result)
-                        with ex->
-                            (
-                            try
-                            ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
-                            with _->()
-                            )
-                        ))
-                    (js,fullFunc)|>api.JSErunScript
-                )
-            )
-            member _this.JSEfireCustomEvent=JSEfireCustomEvent_delegate(fun ename jdata cb->
-                (
-                    let fullFunc=MCCSAPI.JSECab(fun result->
-                        (
-                        try
-                            cb.Invoke(result)
-                        with ex->
-                            (
-                            try
-                            ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
-                            with _->()
-                            )
-                        ))
-                    (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
-                )
-            )
+            member _this.removeBeforeActListener=removeBeforeActListener_delegate(removeBeforeActListener_fun)   
+            member _this.removeAfterActListener=removeAfterActListener_delegate(removeAfterActListener_fun)
+            member _this.setCommandDescribe=setCommandDescribe_delegate(setCommandDescribe_fun)
+            member _this.runcmd=runcmd_delegate(runcmd_fun)
+            member _this.logout=logout_delegate(logout_fun)
+            member _this.getOnLinePlayers=getOnLinePlayers_delegate(getOnLinePlayers_fun)
+            member _this.getStructure =getStructure_delegate(getStructure_fun)
+            member _this.setStructure =setStructure_delegate(setStructure_fun)
+            member _this.setServerMotd=setServerMotd_delegate(setServerMotd_fun)
+            member _this.JSErunScript=JSErunScript_delegate(JSErunScript_fun)
+            member _this.JSEfireCustomEvent=JSEfireCustomEvent_delegate(JSEfireCustomEvent_fun)
             member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid)
             member this.getPlayerAbilities =getPlayerAbilities_delegate(getPlayerAbilities_fun)
             member this.setPlayerAbilities =setPlayerAbilities_delegate(fun uuid a->
