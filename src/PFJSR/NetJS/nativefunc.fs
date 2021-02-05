@@ -1,5 +1,4 @@
 ﻿namespace PFJSR
-
 open System.IO
 open System.Threading
 open System.Threading.Tasks
@@ -7,7 +6,7 @@ open API
 open CSR
 open type Newtonsoft.Json.JsonConvert
 open Newtonsoft.Json.Linq
-
+open PFJSR
 module NativeFunc=
     module Basic=
         let shares  = new System.Collections.Generic.Dictionary<string,obj>()
@@ -148,60 +147,61 @@ module NativeFunc=
                     err|>failwith 
             let InvokeRemoveFailed(a1:string ,a2:string)= 
                 ("在脚本\""+scriptName+"\"执行\""+a1+"\"无效",new exn( "参数2的值仅可以通过\""+a2+"\"结果获得"))|>Console.WriteLineErr
+            let getPlayerAbilities_fun(uuid:string)= 
+                for ix in (new System.Diagnostics.StackTrace(true)).GetFrames() do
+                    Console.WriteLine(ix.ToString())
+                uuid|>CheckUuid;AssertCommercial()
+                uuid|>api.getPlayerAbilities
+            (*!
+            233
+            *)   
             let _BeforeActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
             let _AfterActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
+            let setTimeout_fun(o:obj)(ms:int)= 
+                if not (o|>isNull) then
+                    Task.Run(fun _->
+                    (
+                        try
+                            ms|>Thread.Sleep
+                            if o.GetType()=typeof<string> then
+                                engine.Execute(o:?>string)|>ignore
+                            else
+                                (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
+                        with ex->
+                        (
+                            ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
+                        ) 
+                    ))|>ignore
+            let runScript_fun(o:obj)=
+                if not (o|>isNull) then
+                    try
+                        if o.GetType()=typeof<string> then
+                            engine.Execute(o:?>string)|>ignore
+                        else
+                            (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
+                    with ex->
+                        ($"在脚本\"{scriptName}\"执行\"runScript时遇到错误：",ex)|>Console.WriteLineErr
+            let request_fun(u)(m)(p)(f:System.Action<obj>)=
+                Task.Run(fun ()-> 
+                        try
+                            let mutable ret:string = null;
+                            try
+                                    ret <- PFJSRBDSAPI.Ex.Localrequest(u, m, p)
+                            with _-> ()
+                            if f|>isNull|>not then
+                                try
+                                    ret|>f.Invoke
+                                with ex->
+                                (
+                                    ($"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：",ex)|>Console.WriteLineErr
+                                ) 
+                        with _-> ()
+                    )|>ignore
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
-            member _this.setTimeout=
-                setTimeout_delegate(fun o ms->
-                        if not (o|>isNull) then
-                            Task.Run(fun _->
-                            (
-                                try
-                                    ms|>Thread.Sleep
-                                    if o.GetType()=typeof<string> then
-                                        engine.Execute(o:?>string)|>ignore
-                                    else
-                                        (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
-                                with ex->
-                                (
-                                    ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
-                                ) 
-                            ))|>ignore
-                    )
-            member _this.runScript=
-                runScript_delegate(fun o->
-                        if not (o|>isNull) then
-                                try
-                                    if o.GetType()=typeof<string> then
-                                        engine.Execute(o:?>string)|>ignore
-                                    else
-                                        (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
-                                with ex->
-                                (
-                                    ($"在脚本\"{scriptName}\"执行\"runScript时遇到错误：",ex)|>Console.WriteLineErr
-                    )
-                )
-            member _this.request=
-                request_delegate(fun u m p f->
-                        Task.Run(fun ()-> 
-                            (
-                                try
-                                    let mutable ret:string = null;
-                                    try
-                                         ret <- PFJSRBDSAPI.Ex.Localrequest(u, m, p)
-                                    with _-> ()
-                                    if f|>isNull|>not then
-                                        try
-                                            ret|>f.Invoke
-                                        with ex->
-                                        (
-                                           ($"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：",ex)|>Console.WriteLineErr
-                                        ) 
-                                with _-> ()
-                            )
-                            )|>ignore
-                    )
+            member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
+            member _this.runScript=runScript_delegate(runScript_fun)
+            member _this.request=request_delegate(request_fun)
             member _this.setBeforeActListener=_this.addBeforeActListener
             member _this.addBeforeActListener=
                 addBeforeActListener_delegate(fun k f-> 
@@ -331,11 +331,7 @@ module NativeFunc=
                 )
             )
             member _this.reNameByUuid=reNameByUuid_delegate(fun uuid name->uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid)
-            member this.getPlayerAbilities =getPlayerAbilities_delegate(fun uuid->
-                (
-                    uuid|>CheckUuid;AssertCommercial()
-                    uuid|>api.getPlayerAbilities
-                ))
+            member this.getPlayerAbilities =getPlayerAbilities_delegate(getPlayerAbilities_fun)
             member this.setPlayerAbilities =setPlayerAbilities_delegate(fun uuid a->
                 (
                     uuid|>CheckUuid;AssertCommercial()

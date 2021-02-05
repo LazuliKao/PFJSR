@@ -1,9 +1,7 @@
 ﻿namespace PFJSR
-
 open System
 open Newtonsoft.Json
 open System.IO
-
 module Data=
     type ConfigNativeScriptsModel() =
         let mutable _Enable : bool  = false

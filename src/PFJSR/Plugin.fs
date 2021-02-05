@@ -36,7 +36,7 @@ module PluginMain=
                         "正在重载..."|>Console.WriteLine
                         let mutable scriptCount=0
                         let mutable ListenerCount=0
-                        for runner in PFJSR.JSR.RunnerList do
+                        for runner in JSR.RunnerList do
                             for (_,name,func) in runner.core.BeforeActListeners do
                                 API.api.removeBeforeActListener(name,func)|>ignore
                                 ListenerCount<-ListenerCount+1
@@ -46,7 +46,7 @@ module PluginMain=
                                 ListenerCount<-ListenerCount+1
                             runner.core.AfterActListeners.Clear()
                             scriptCount<-scriptCount+1
-                        PFJSR.JSR.RunnerList<-[]
+                        JSR.RunnerList<-[]
                         LoadJSRScripts()
                         $"重载成功：已删除来自 {scriptCount} 个脚本的 {ListenerCount} 个监听"|>Console.WriteLine
                         false

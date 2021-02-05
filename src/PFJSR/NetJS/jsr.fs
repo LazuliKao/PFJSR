@@ -1,7 +1,6 @@
 ﻿namespace PFJSR
 open Jint.Native
 open Jint
-
 module JSR=
     type JSRunner(_engine:Engine,_js:string,_core:NativeFunc.Core.Instance) = 
         member this.eng with get() =_engine  

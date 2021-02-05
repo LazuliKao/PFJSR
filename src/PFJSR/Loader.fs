@@ -1,9 +1,9 @@
 ﻿namespace PFJSR
+open PFJSR
 open System.Collections
 open System.IO
 open System.Threading.Tasks
 open System.Threading
-
 module Loader=
     type ScriptItemModel(n: string, p: string) =
         member this.Name :string=n
@@ -22,7 +22,7 @@ module Loader=
             (
                 engine,
                 (filePath|>File.ReadAllText),
-                new PFJSR.NativeFunc.Core.Instance(scriptName,engine)
+                new NativeFunc.Core.Instance(scriptName,engine)
             )|>JSR.CreateEngine|>ignore
             LoadedScripts<-new ScriptItemModel (scriptName, filePath)::LoadedScripts
             scriptName+"加载完成！"|>Console.WriteLine
@@ -30,6 +30,7 @@ module Loader=
     let LoadNativeScript(filePath:string,startTime:int)=
         let scriptName=filePath|>Path.GetFileNameWithoutExtension
         try
+        
             let scriptContent=filePath|>File.ReadAllText
             API.api.addAfterActListener(CSR.EventKey.onScriptEngineInit,fun e->
                 try

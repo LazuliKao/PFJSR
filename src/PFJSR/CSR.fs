@@ -1,5 +1,4 @@
-﻿ 
-namespace CSR
+﻿namespace CSR
 open CSR
   type public Plugin()=
         static let mutable mapi:MCCSAPI =null

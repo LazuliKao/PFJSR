@@ -5,7 +5,7 @@
     <TargetFramework>net461</TargetFramework>
     <AssemblyName>PFJSR.csr</AssemblyName>
     <OutputPath>..\..\..\CSR\CSRDll\</OutputPath>
-    <Version>0.0.3</Version>
+    <Version>0.0.4</Version>
     <Authors>littlegao</Authors>
     <Company>PixelFaramitaTeam</Company>
     <NeutralLanguage>zh</NeutralLanguage>
@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <Compile Include="API.fs" />
+    <Compile Include="Extensions.fs" />
     <Compile Include="Console.fs" />
     <Compile Include="Data.fs" />
     <Compile Include="NetJS\nativefunc.fs" />
