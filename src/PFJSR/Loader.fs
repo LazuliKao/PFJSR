@@ -36,12 +36,14 @@ module Loader=
                     Task.Run(fun _->
                         try
                             Thread.Sleep(startTime)
+                            //NativeScripts.LoadScript(scriptName,scriptContent)
+                            //NativeScripts.LoadScript(scriptName,scriptContent)
                             (scriptContent,fun result->
-                                if result then
-                                   $"\"{scriptName}\"载入成功！(返回值{result})"|>Console.WriteLine
-                                else
-                                   $"\"{scriptName}\"载入失败！(返回值{result})"|>Console.WriteLine
-                            )|>API.api.JSErunScript 
+                                      if result then
+                                         $"\"{scriptName}\"载入成功！(返回值{result})"|>Console.WriteLine
+                                      else
+                                         $"\"{scriptName}\"载入失败！(返回值{result})"|>Console.WriteLine
+                                  )|>API.api.JSErunScript
                         with ex ->($"\"{scriptName}\"加载失败！",ex)|>Console.WriteLineErr
                     )|>ignore  
                 with ex ->($"\"{scriptName}\"添加失败！",ex)|>Console.WriteLineErr

@@ -47,6 +47,7 @@ module PluginMain=
                             runner.core.AfterActListeners.Clear()
                             scriptCount<-scriptCount+1
                         JSR.RunnerList<-[]
+                        NativeFunc.Basic.shares.Clear()
                         LoadJSRScripts()
                         $"重载成功：已删除来自 {scriptCount} 个脚本的 {ListenerCount} 个监听"|>Console.WriteLine
                         false
@@ -56,7 +57,12 @@ module PluginMain=
                     else true
                 with ex->("重载失败：",ex)|>Console.WriteLineErr;true
             )|>ignore      
+        
 
+        API.api.addBeforeActListener(EventKey.onMobHurt,fun _e->
+            (_e|>MobHurtEvent.getFrom|>Newtonsoft.Json.Linq.JObject.FromObject).ToString()|>Console.WriteLine
+            true
+        )
         //System.Threading.Tasks.Task.Run(fun ()->
         //    let script: string=System.IO.File.ReadAllText("Logging.js")
         //    System.Threading.Thread.Sleep(5000)

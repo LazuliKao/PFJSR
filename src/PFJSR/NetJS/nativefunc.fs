@@ -9,7 +9,7 @@ open Newtonsoft.Json.Linq
 open PFJSR
 module NativeFunc=
     module Basic=
-        let shares  = new System.Collections.Generic.Dictionary<string,obj>()
+        let shares  = new System.Collections.Generic.Dictionary<string,Jint.Native.JsValue>()
         type log_delegate = delegate of string -> unit
         let log=log_delegate(fun e-> Console.log(e))
         type fileReadAllText_delegate = delegate of string -> string
@@ -40,17 +40,17 @@ module NativeFunc=
             TimeNow_delegate(fun _ ->
                 System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                 )
-        type setShareData_delegate = delegate of string*obj-> unit
+        type setShareData_delegate = delegate of string*Jint.Native.JsValue-> unit
         let setShareData=
             setShareData_delegate(fun k o ->
                     if shares.ContainsKey(k) then shares.[k] <- o else shares.Add(k,o)
                 )
-        type getShareData_delegate = delegate of string -> obj
+        type getShareData_delegate = delegate of string -> Jint.Native.JsValue
         let getShareData=
             getShareData_delegate(fun k ->
-                    if shares.ContainsKey(k) then shares.[k] else Jint.Native.Undefined.Instance:>obj
+                    if shares.ContainsKey(k) then shares.[k] else Jint.Native.Undefined.Instance 
                     )
-        type removeShareData_delegate = delegate of string -> obj
+        type removeShareData_delegate = delegate of string -> Jint.Native.JsValue
         let removeShareData=
             removeShareData_delegate(fun k->
                     if shares.ContainsKey(k) then 
@@ -58,7 +58,7 @@ module NativeFunc=
                         k|> shares.Remove|>ignore
                         o
                     else
-                        Jint.Native.Undefined.Instance:>obj
+                        Jint.Native.Undefined.Instance
                 )
         type mkdir_delegate = delegate of string-> bool
         let mkdir=
@@ -139,7 +139,7 @@ module NativeFunc=
                         err|>failwith
             let AssertCommercial()=
                 if not api.COMMERCIAL then
-                    let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                    let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name.Remove(funcname.Length-4)
                     let err = $"获取方法\"{fn}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
