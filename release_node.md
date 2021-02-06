@@ -1,0 +1,1 @@
+> #### 这里是最近一次成功的[AzurePipeline构建存档](https://dev.azure.com/gaoxinhong2004/PFBridge/_build?definitionId=2&view=runs&statusFilter=succeeded),由AzurePipeline自动从最新的GitHub提交编译生成

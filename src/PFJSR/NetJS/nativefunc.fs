@@ -136,6 +136,10 @@ module NativeFunc=
         type setTimeout_delegate = delegate of JsValue*int -> unit
         type runScript_delegate = delegate of JsValue -> unit
         type postTick_delegate = delegate of JsValue -> unit
+        type getscoreById_delegate = delegate of int64*string->int
+        type setscoreById_delegate = delegate of int64*string*int->int
+        type getAllScore_delegate = delegate of unit->string 
+        type setAllScore_delegate = delegate of string->bool
         type Instance(scriptName:string,engine:Jint.Engine) =
             let CheckUuid(uuid:string)=
                 if String.IsNullOrWhiteSpace(uuid) then
@@ -282,11 +286,9 @@ module NativeFunc=
                     try
                         cb.Invoke(result)
                     with ex->
-                        (
                         try
                         ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
                         with _->()
-                        )
                     )
                 (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
             let reNameByUuid_fun(uuid)(name)=uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid
@@ -404,6 +406,16 @@ module NativeFunc=
                                 ($"在脚本\"{scriptName}\"执行\"postTick时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                    |>api.postTick 
+            let getscoreById_fun(id)(st) = 
+                (id,st)|>api.getscoreById
+            let setscoreById_fun(id)(objname)(value) =  
+                (id,objname,value)|>api.setscoreById
+            let getAllScore_fun=
+                AssertCommercial()
+                api.getAllScore
+            let setAllScore_fun(data) = 
+                AssertCommercial()
+                data|>api.setAllScore
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -459,4 +471,8 @@ module NativeFunc=
             member _this.setscoreboard=setscoreboard_delegate(setscoreboard_fun)
             member _this.getPlayerIP=getPlayerIP_delegate(getPlayerIP_fun)
             member _this.postTick=postTick_delegate(postTick_fun)
+            member _this.getscoreById=getscoreById_delegate(getscoreById_fun)
+            member _this.setscoreById=setscoreById_delegate(setscoreById_fun)
+            member _this.getAllScore=getAllScore_delegate(getAllScore_fun)
+            member _this.setAllScore=setAllScore_delegate(setAllScore_fun)
 
