@@ -154,6 +154,8 @@ module NativeFunc=
             let AssertCommercial()=
                 if not api.COMMERCIAL then
                     let fn = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                    for item in (new Diagnostics.StackTrace()).GetFrames() do
+                        item.ToString()|>Console.WriteLine
                     let err = $"获取方法\"{fn.Remove(fn.Length-4)}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
@@ -406,16 +408,19 @@ module NativeFunc=
                                 ($"在脚本\"{scriptName}\"执行\"postTick时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                    |>api.postTick 
+            let getAllScore_fun=(
+                //AssertCommercial()
+                Console.WriteLine("TEST")
+                api.getAllScore
+            )
+            let setAllScore_fun(data) =(
+                //AssertCommercial()
+                data|>api.setAllScore
+            )
             let getscoreById_fun(id)(st) = 
                 (id,st)|>api.getscoreById
             let setscoreById_fun(id)(objname)(value) =  
                 (id,objname,value)|>api.setscoreById
-            let getAllScore_fun=
-                AssertCommercial()
-                api.getAllScore
-            let setAllScore_fun(data) = 
-                AssertCommercial()
-                data|>api.setAllScore
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -458,7 +463,7 @@ module NativeFunc=
             member _this.talkAs=talkAs_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.talkAs)
             member _this.runcmdAs=runcmdAs_delegate(fun uuid a->uuid|>CheckUuid;(uuid,a)|>api.runcmdAs)
             member _this.sendSimpleForm=sendSimpleForm_delegate(fun uuid title content buttons->uuid|>CheckUuid;(uuid,title,content,buttons)|>api.sendSimpleForm)
-             member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->uuid|>CheckUuid;(uuid,title,content,button1,button2)|>api.sendModalForm)
+            member _this.sendModalForm=sendModalForm_delegate(fun uuid title content button1 button2->uuid|>CheckUuid;(uuid,title,content,button1,button2)|>api.sendModalForm)
             member _this.sendCustomForm=sendCustomForm_delegate(fun uuid json->uuid|>CheckUuid;(uuid,json)|>api.sendCustomForm)
             member _this.releaseForm=releaseForm_delegate(fun formid->formid|>api.releaseForm)
             member _this.setPlayerSidebar=setPlayerSidebar_delegate(setPlayerSidebar_fun)
