@@ -1,5 +1,5 @@
 # PFJSR
-### [Minebbs](https://www.minebbs.com/resources/2105/)  [最新构建](https://github.com/littlegao233/PFJSR/releases/tag/v1-AzurePipelineBuild)
+### [Minebbs](https://www.minebbs.com/resources/2105/) | [最新构建](https://github.com/littlegao233/PFJSR/releases/tag/v1-AzurePipelineBuild)
 ## 仅供学习交流使用
 
 # 核心功能参考自
