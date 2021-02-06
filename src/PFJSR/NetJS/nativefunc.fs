@@ -1,17 +1,36 @@
 ﻿namespace PFJSR
-open System.IO
-open System.Threading
-open System.Threading.Tasks
 open API
 open CSR
 open type Newtonsoft.Json.JsonConvert
 open Newtonsoft.Json.Linq
 open PFJSR
+open Jint.Native
+open System
+open System.Threading.Tasks
+open System.Threading
+open System.IO
+
 module NativeFunc=
     module Basic=
-        let shares  = new System.Collections.Generic.Dictionary<string,Jint.Native.JsValue>()
+        let shares  = new Collections.Generic.Dictionary<string,JsValue>()
+        type mkdir_delegate = delegate of string-> bool
+        let mkdir=
+           mkdir_delegate(fun dirname ->
+                   let mutable dir :DirectoryInfo= null;
+                   if not (dirname|>isNull) then
+                       try
+                           dir <- Directory.CreateDirectory(dirname)
+                       with _->()
+                   not (dir|>isNull)
+               )
         type log_delegate = delegate of string -> unit
-        let log=log_delegate(fun e-> Console.log(e))
+        let log=log_delegate(fun e-> 
+                //if e.[0]<>'#' then
+                    Console.log(e)
+                //else
+                //    if e.StartsWith("#Create ") then
+                //        Console.log("尝试自动创建目录："+e.Substring(9))
+            )
         type fileReadAllText_delegate = delegate of string -> string
         let fileReadAllText=
             fileReadAllText_delegate (fun e->  
@@ -38,19 +57,19 @@ module NativeFunc=
         type TimeNow_delegate = delegate of unit -> string
         let TimeNow=
             TimeNow_delegate(fun _ ->
-                System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                 )
-        type setShareData_delegate = delegate of string*Jint.Native.JsValue-> unit
+        type setShareData_delegate = delegate of string*JsValue-> unit
         let setShareData=
             setShareData_delegate(fun k o ->
                     if shares.ContainsKey(k) then shares.[k] <- o else shares.Add(k,o)
                 )
-        type getShareData_delegate = delegate of string -> Jint.Native.JsValue
+        type getShareData_delegate = delegate of string -> JsValue
         let getShareData=
             getShareData_delegate(fun k ->
                     if shares.ContainsKey(k) then shares.[k] else Jint.Native.Undefined.Instance 
                     )
-        type removeShareData_delegate = delegate of string -> Jint.Native.JsValue
+        type removeShareData_delegate = delegate of string -> JsValue
         let removeShareData=
             removeShareData_delegate(fun k->
                     if shares.ContainsKey(k) then 
@@ -60,24 +79,14 @@ module NativeFunc=
                     else
                         Jint.Native.Undefined.Instance
                 )
-        type mkdir_delegate = delegate of string-> bool
-        let mkdir=
-            mkdir_delegate(fun dirname ->
-                    let mutable dir :DirectoryInfo= null;
-                    if not (dirname|>isNull) then
-                        try
-                            dir <- Directory.CreateDirectory(dirname)
-                        with _->()
-                    not (dir|>isNull)
-                )
         type getWorkingPath_delegate = delegate of unit-> string
         let getWorkingPath=
             getWorkingPath_delegate(fun _ ->
-                    System.AppDomain.CurrentDomain.BaseDirectory
+                    AppDomain.CurrentDomain.BaseDirectory
                 )
     module Core =
-        type addBeforeActListener_delegate = delegate of string*System.Func<string,obj> -> int
-        type addAfterActListener_delegate = delegate of string*System.Func<string,obj> -> int
+        type addBeforeActListener_delegate = delegate of string*Func<string,Object> -> int
+        type addAfterActListener_delegate = delegate of string*Func<string,Object> -> int
         type removeBeforeActListener_delegate = delegate of string*int -> unit
         type removeAfterActListener_delegate = delegate of string*int -> unit
         type setCommandDescribe_delegate = delegate of string*string -> unit
@@ -87,8 +96,8 @@ module NativeFunc=
         type getStructure_delegate = delegate of int*string*string*bool*bool -> string
         type setStructure_delegate = delegate of string*int*string*byte*bool*bool -> bool
         type setServerMotd_delegate = delegate of string*bool -> bool
-        type JSErunScript_delegate = delegate of string*System.Action<bool> -> unit
-        type JSEfireCustomEvent_delegate = delegate of string*string*System.Action<bool> -> unit
+        type JSErunScript_delegate = delegate of string*Action<bool> -> unit
+        type JSEfireCustomEvent_delegate = delegate of string*string*Action<bool> -> unit
         type reNameByUuid_delegate = delegate of string*string -> bool
         type getPlayerAbilities_delegate = delegate of string -> string
         type setPlayerAbilities_delegate = delegate of string*string -> bool
@@ -123,55 +132,56 @@ module NativeFunc=
         type getscoreboard_delegate = delegate of string*string -> int
         type setscoreboard_delegate = delegate of string*string*int -> bool
         type getPlayerIP_delegate = delegate of string -> string
-        type request_delegate = delegate of string*string*string*System.Action<obj> -> unit
-        type setTimeout_delegate = delegate of obj*int -> unit
-        type runScript_delegate = delegate of obj -> unit
+        type request_delegate = delegate of string*string*string*Action<obj> -> unit
+        type setTimeout_delegate = delegate of JsValue*int -> unit
+        type runScript_delegate = delegate of JsValue -> unit
+        type postTick_delegate = delegate of JsValue -> unit
         type Instance(scriptName:string,engine:Jint.Engine) =
             let CheckUuid(uuid:string)=
-                if System.String.IsNullOrWhiteSpace(uuid) then
-                    let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                if String.IsNullOrWhiteSpace(uuid) then
+                    let funcname = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                     let err = $"在脚本\"{scriptName}\"调用\"{funcname.Remove(funcname.Length-4)}\"方法时使用了空的uuid！"
                     err|>failwith
                 if Data.Config.JSR.CheckUuid then
-                    if (uuid,"^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$")|>System.Text.RegularExpressions.Regex.IsMatch|>not then
-                        let funcname = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                    if (uuid,"^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$")|>Text.RegularExpressions.Regex.IsMatch|>not then
+                        let funcname = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                         let err = $"在脚本\"{scriptName}\"调用\"{funcname.Remove(funcname.Length-4)}\"方法时使用了无效的uuid:\"{uuid}\"！"
                         err|>failwith
             let AssertCommercial()=
                 if not api.COMMERCIAL then
-                    let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                    let fn = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                     let err = $"获取方法\"{fn.Remove(fn.Length-4)}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
             let InvokeRemoveFailed(a1:string)= 
                 ("在脚本\""+scriptName+"\"执行\"remove"+a1+"ActListener\"无效",new exn( "参数2的值仅可以通过\"add"+a1+"ActListener\"结果获得"))|>Console.WriteLineErr
-            let _BeforeActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
-            let _AfterActListeners =new System.Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
-            let setTimeout_fun(o:obj)(ms:int)= 
+            let _BeforeActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
+            let _AfterActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
+            let setTimeout_fun(o:JsValue)(ms:int)= 
                 if not (o|>isNull) then
                     Task.Run(fun _->
                     (
                         try
                             ms|>Thread.Sleep
-                            if o.GetType()=typeof<string> then
-                                engine.Execute(o:?>string)|>ignore
+                            if o.IsString() then
+                                engine.Execute(o.ToString())|>ignore
                             else
-                                (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
+                                o.Invoke()|>ignore
                         with ex->
                         (
                             ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
                         ) 
                     ))|>ignore
-            let runScript_fun(o:obj)=
+            let runScript_fun(o:JsValue)=
                 if not (o|>isNull) then
                     try
-                        if o.GetType()=typeof<string> then
-                            engine.Execute(o:?>string)|>ignore
+                        if o.IsString() then
+                            engine.Execute(o.ToString())|>ignore
                         else
-                            (engine.ClrTypeConverter.Convert(o,typeof<System.Action>,null):?>System.Action).Invoke()
+                            o.Invoke()|>ignore
                     with ex->
                         ($"在脚本\"{scriptName}\"执行\"runScript时遇到错误：",ex)|>Console.WriteLineErr
-            let request_fun(u)(m)(p)(f:System.Action<obj>)=
+            let request_fun(u)(m)(p)(f:Action<obj>)=
                 Task.Run(fun ()-> 
                         try
                             let mutable ret:string = null;
@@ -187,9 +197,8 @@ module NativeFunc=
                                 ) 
                         with _-> ()
                     )|>ignore
-            let addBeforeActListener_fun(k)(f:System.Func<string,obj>)=
+            let addBeforeActListener_fun(k)(f:Func<string,Object>)=
                 let fullFunc=MCCSAPI.EventCab(fun e->
-                    (
                         try
                             e|>BaseEvent.getFrom|>SerializeObject|>f.Invoke|>false.Equals|>not
                             //let got=e|>BaseEvent.getFrom
@@ -197,33 +206,28 @@ module NativeFunc=
                             //e.Add("result",new JValue( got.RESULT):>JToken)
                             //e.ToString()|>f.Invoke|>false.Equals|>not
                         with ex->
-                        (
                             try
                             ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"BeforeAct回调时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                             true
-                        )
-                    ))
+                    )
                 let funcHash=f.Method.GetHashCode()
                 _BeforeActListeners.Add(funcHash,k,fullFunc)
                 (k,fullFunc)|>api.addBeforeActListener|>ignore
                 funcHash
-            let addAfterActListener_fun(k)(f:System.Func<string,obj>)=
+            let addAfterActListener_fun(k)(f:Func<string,Object>)=
                 let fullFunc=MCCSAPI.EventCab(fun e->
-                    (
                         try
                             let got=e|>BaseEvent.getFrom
                             let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
-                            e.Add("result",new JValue( got.RESULT):>JToken)
+                            e.Add("result",new JValue(got.RESULT):>JToken)
                             e.ToString(Newtonsoft.Json.Formatting.None)|>f.Invoke|>false.Equals|>not
                         with ex->
-                        (
                             try
                             ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                             true
-                        )
-                    ))
+                    )
                 let funcHash=f.Method.GetHashCode()
                 _AfterActListeners.Add(funcHash,k,fullFunc)
                 (k,fullFunc)|>api.addAfterActListener|>ignore
@@ -255,7 +259,7 @@ module NativeFunc=
             let logout_fun(l)=l|>api.logout
             let getOnLinePlayers_fun()= 
                 let result=api.getOnLinePlayers()
-                if result|>System.String.IsNullOrEmpty then "[]" else result
+                if result|>String.IsNullOrEmpty then "[]" else result
             let getStructure_fun(did)(posa)(posb)(exent)(exblk)=
                 AssertCommercial()
                 (did,posa,posb,exent,exblk)|>api.getStructure
@@ -263,21 +267,18 @@ module NativeFunc=
                 AssertCommercial()
                 (jdata,did,jsonposa,rot,exent,exblk)|>api.setStructure
             let setServerMotd_fun(motd)(isShow)=(motd, isShow)|>api.setServerMotd
-            let JSErunScript_fun(js)(cb:System.Action<bool>)=
+            let JSErunScript_fun(js)(cb:Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
                     try
                         cb.Invoke(result)
                     with ex->
-                        (
                         try
                         ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
                         with _->()
-                        )
                 )
                 (js,fullFunc)|>api.JSErunScript
-            let JSEfireCustomEvent_fun(ename)(jdata)(cb:System.Action<bool>)=
+            let JSEfireCustomEvent_fun(ename)(jdata)(cb:Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
-                    (
                     try
                         cb.Invoke(result)
                     with ex->
@@ -286,7 +287,7 @@ module NativeFunc=
                         ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
                         with _->()
                         )
-                    ))
+                    )
                 (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
             let reNameByUuid_fun(uuid)(name)=uuid|>CheckUuid;(uuid,name)|>api.reNameByUuid
             let getPlayerAbilities_fun(uuid:string)= 
@@ -347,7 +348,7 @@ module NativeFunc=
                 //        if (ptr == IntPtr.Zero) { GetPFEssentialsApiFailedTips(key); }
                 //        else
                 //        {
-                //            Action<string,string> org = (Action<string,string>)System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr);
+                //            Action<string,string> org = (Action<string,string>)Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr);
                 //            org.Invoke(name,cmd);
                 //        }
                 //}
@@ -355,10 +356,10 @@ module NativeFunc=
                 if  api.COMMERCIAL then
                     (uuid,x,y,z,did)|>api.teleport
                 else
-                    let ptr:System.IntPtr=api.getSharePtr("PFEssentials.PublicApi.V2.Teleport") 
+                    let ptr:IntPtr=api.getSharePtr("PFEssentials.PublicApi.V2.Teleport") 
                     let mutable result=false
-                    if ptr <> System.IntPtr.Zero then
-                        let org = System.Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr):?>System.Func<string,single,single,single,int,bool>
+                    if ptr <> IntPtr.Zero then
+                        let org = Runtime.InteropServices.Marshal.GetObjectForIUnknown(ptr):?>Func<string,single,single,single,int,bool>
                         result<- ((uuid,x,y,z,did)|>org.Invoke )
                     if result|>not then
                         AssertCommercial()
@@ -382,17 +383,27 @@ module NativeFunc=
             let setscoreboard_fun(uuid)(sname)(value)=uuid|>CheckUuid;(uuid,sname,value)|>api.setscoreboard
             let getPlayerIP_fun(uuid)=
                 uuid|>CheckUuid;
-                let mutable result=System.String.Empty
+                let mutable result=String.Empty
                 let data = api.selectPlayer(uuid)
-                if data|>System.String.IsNullOrEmpty|>not then
+                if data|>String.IsNullOrEmpty|>not then
                     let pinfo=Newtonsoft.Json.Linq.JObject.Parse(data)
                     if pinfo.ContainsKey("playerptr") then
-                        let mutable ptr = pinfo.["playerptr"]|>System.Convert.ToInt64|>System.IntPtr
-                        if ptr <> System.IntPtr.Zero then
+                        let mutable ptr = pinfo.["playerptr"]|>Convert.ToInt64|>IntPtr
+                        if ptr <> IntPtr.Zero then
                             let ipport=(new CsPlayer(api, ptr)).IpPort
                             Console.WriteLine(ipport)
                             result<-ipport.Substring(0, ipport.IndexOf('|'))
                 result
+            let postTick_fun(o:JsValue)=
+                if not (o|>isNull) then
+                    fun ()->
+                        try
+                            o.Invoke()|>ignore
+                        with ex->
+                            try
+                                ($"在脚本\"{scriptName}\"执行\"postTick时遇到错误：",ex)|>Console.WriteLineErr
+                            with _->()
+                   |>api.postTick 
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -447,4 +458,5 @@ module NativeFunc=
             member _this.getscoreboard=getscoreboard_delegate(getscoreboard_fun)
             member _this.setscoreboard=setscoreboard_delegate(setscoreboard_fun)
             member _this.getPlayerIP=getPlayerIP_delegate(getPlayerIP_fun)
+            member _this.postTick=postTick_delegate(postTick_fun)
 
