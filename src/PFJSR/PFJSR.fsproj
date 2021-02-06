@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFrameworks>net461;net5</TargetFrameworks>
     <AssemblyName>PFJSR.csr</AssemblyName>
     <OutputPath></OutputPath>
     <Version>0.0.5</Version>
