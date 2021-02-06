@@ -139,8 +139,8 @@ module NativeFunc=
                         err|>failwith
             let AssertCommercial()=
                 if not api.COMMERCIAL then
-                    let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name.Remove(funcname.Length-4)
-                    let err = $"获取方法\"{fn}\"失败，社区版不支持该方法！"
+                    let fn = (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
+                    let err = $"获取方法\"{fn.Remove(fn.Length-4)}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
             let InvokeRemoveFailed(a1:string)= 
