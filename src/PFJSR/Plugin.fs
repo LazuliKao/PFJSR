@@ -13,11 +13,11 @@ module PluginMain=
                  //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
                  if file.ToLower().EndsWith(".js") then file|>Loader.LoadJSRScript
     let LoadNativeScripts()=
-        if Data.Config.NativeScripts.Enable then
-            let DirPath:string=Data.Config.NativeScripts.Path|>Path.GetFullPath
+        if Data.Config.VanillaScripts.Enable then
+            let DirPath:string=Data.Config.VanillaScripts.Path|>Path.GetFullPath
             if DirPath|>Directory.Exists|>not then
                 DirPath|>Directory.CreateDirectory|>ignore
-                "创建NativeScripts目录:"+Data.Config.NativeScripts.Path|>Console.WriteLine
+                "创建NativeScripts目录:"+Data.Config.VanillaScripts.Path|>Console.WriteLine
             let mutable startTime=5000
             for file in (DirPath|>Directory.GetFiles) do
                  //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add

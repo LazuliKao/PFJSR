@@ -3,7 +3,7 @@ open System
 open Newtonsoft.Json
 open System.IO
 module Data=
-    type ConfigNativeScriptsModel() =
+    type ConfigVanillaScriptsModel() =
         let mutable _Enable : bool  = false
         let mutable _Path : string  = "scripts"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
@@ -21,9 +21,9 @@ module Data=
         member _this.ReloadCommand with get() =_ReloadCommand and set value  =_ReloadCommand<-value
     type ConfigModel() =
         let mutable _JSR= new ConfigJSRModel()
-        let mutable _NativeScripts= new ConfigNativeScriptsModel()
+        let mutable _VanillaScripts= new ConfigVanillaScriptsModel()
         member _this.JSR with get() =_JSR and set value  =_JSR<-value
-        member _this.NativeScripts with get() =_NativeScripts and set value  =_NativeScripts<-value
+        member _this.VanillaScripts with get() =_VanillaScripts and set value  =_VanillaScripts<-value
     let mutable private _config: ConfigModel = new ConfigModel()
     let mutable private _hasLoaded: bool = false
     let public Config:ConfigModel = 

@@ -1,6 +1,6 @@
 ﻿namespace PFJSR
 open CSR
-module NativeScripts=
+module VanillaScripts=
     let SetupEngine=()
     let AppendScript(scriptName:string,scriptContent:string)=
         (scriptContent,fun result->
@@ -9,5 +9,5 @@ module NativeScripts=
             else
                $"\"{scriptName}\"载入失败！(返回值{result})"|>Console.WriteLine
         )|>API.api.JSErunScript
-    let ApplyAcripts=()
+    let ApplyScripts=()
 

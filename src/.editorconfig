@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CS8073: 由于此类型的值永不等于 "null"，该表达式的结果始终相同
+dotnet_diagnostic.CS8073.severity = suggestion

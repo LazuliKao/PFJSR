@@ -25,11 +25,11 @@ module NativeFunc=
                )
         type log_delegate = delegate of string -> unit
         let log=log_delegate(fun e-> 
-                //if e.[0]<>'#' then
+                //if e.[0]<>'*' then
                     Console.log(e)
                 //else
-                //    if e.StartsWith("#Create ") then
-                //        Console.log("尝试自动创建目录："+e.Substring(9))
+                    //if e.StartsWith("*") then
+                    //    Console.log("尝试自动创建目录："+e.Substring(1))
             )
         type fileReadAllText_delegate = delegate of string -> string
         let fileReadAllText=
@@ -261,8 +261,38 @@ module NativeFunc=
                             InvokeRemoveFailed("After")
                 with _->InvokeRemoveFailed("After")
             let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
-            let runcmd_fun(cmd)=cmd|>api.runcmd
-            let logout_fun(l)=l|>api.logout
+            let mutable cli:Diagnostics.Process=null
+            let runcmd_fun(cmd:string)=
+                if cmd.StartsWith("system ") then
+                    if isNull(cli) then
+                        cli <- new Diagnostics.Process()
+                        cli.StartInfo.FileName <- "cmd"
+                        cli.StartInfo.WorkingDirectory<-Basic.getWorkingPath.Invoke()
+                        cli.StartInfo.Arguments <- $"/C \"{cmd.Substring(7)}\""
+                        //cli.StartInfo.RedirectStandardOutput <- true
+                        //cli.StartInfo.RedirectStandardInput <- true
+                        //cli.StartInfo.RedirectStandardError <- true
+                        cli.StartInfo.UseShellExecute <- false
+                        cli.StartInfo.CreateNoWindow <- false
+                        //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
+                        //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
+                        cli.Exited.AddHandler(fun _ e -> 
+                            //Console.WriteLine(cli.StandardOutput.ReadToEnd())
+                            cli.Dispose()
+                        )
+                        cli.Start()|>ignore
+                        //Console.WriteLine(cli.StandardOutput.ReadToEnd())
+                        //Diagnostics.Process.Start("\"%windir%\system32\cmd.exe\" /C \"cmd.exe\"")|>ignore
+                    //cli.Execute(cmd.Substring(7),false)
+                    true
+                else
+                    cmd|>api.runcmd
+            let logout_fun(l:string)=
+                if l.[0]<>'*' then
+                    l|>api.logout
+                else
+                    Console.log("[Folder Creator Inside]尝试自动创建目录："+l.Substring(1))
+                    Basic.mkdir.Invoke(l.Substring(1))|>ignore
             let getOnLinePlayers_fun()= 
                 let result=api.getOnLinePlayers()
                 if result|>String.IsNullOrEmpty then "[]" else result
