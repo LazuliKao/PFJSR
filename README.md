@@ -1,5 +1,5 @@
 <div align="center">
-<h4>PFJSR</h4>
+<h1>PFJSR</h1>
   
 ### [Minebbs](https://www.minebbs.com/resources/2105/) | [最新构建](https://github.com/littlegao233/PFJSR/releases/tag/v1-AzurePipelineBuild)
 </div>
