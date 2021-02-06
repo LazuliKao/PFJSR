@@ -29,6 +29,6 @@ steps:
 
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Pipeline.Workspace)\src\PFJSR\bin\Release'
+    targetPath: 'src\PFJSR\bin\Release'
     artifact: 'dist'
     publishLocation: 'pipeline'
