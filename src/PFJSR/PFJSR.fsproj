@@ -4,12 +4,18 @@
     <OutputType>Library</OutputType>
     <TargetFramework>net461</TargetFramework>
     <AssemblyName>PFJSR.csr</AssemblyName>
-    <OutputPath>..\..\..\CSR\CSRDll\</OutputPath>
-    <Version>0.0.4</Version>
+    <OutputPath></OutputPath>
+    <Version>0.0.5</Version>
     <Authors>littlegao</Authors>
     <Company>PixelFaramitaTeam</Company>
     <NeutralLanguage>zh</NeutralLanguage>
     <PackageProjectUrl>https://github.com/littlegao233/PFJSR</PackageProjectUrl>
+    <RunPostBuildEvent>1</RunPostBuildEvent>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,7 +47,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="cd &quot;$(TargetDir)&quot;&#xD;&#xA;cd ..&#xD;&#xA;move &quot;$(TargetPath)&quot; &quot;$(TargetFileName)&quot;&#xD;&#xA;move &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;$(TargetName).pdb&quot;&#xD;&#xA;rd /s/q &quot;$(TargetDir)&quot;" />
+    <Exec Command="cd &quot;$(TargetDir)&quot;&#xD;&#xA;cd ..&#xD;&#xA;cd ..&#xD;&#xA;cd ..&#xD;&#xA;cd ..&#xD;&#xA;cd ..&#xD;&#xA;cd ..&#xD;&#xA;set CopyTargetPath=%25cd%25\CSR\CSRDll\&#xD;&#xA;echo 复制CSR.DLL到%25CopyTargetPath%25&#xD;&#xA;if exist %25CopyTargetPath%25 (&#xD;&#xA;    move &quot;$(TargetPath)&quot; &quot;%25CopyTargetPath%25$(TargetFileName)&quot;&#xD;&#xA;    move &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;%25CopyTargetPath%25$(TargetName).pdb&quot;&#xD;&#xA;    rd /s/q &quot;$(TargetDir)&quot;&#xD;&#xA;)&#xD;&#xA;" />
   </Target>
 
 </Project>
