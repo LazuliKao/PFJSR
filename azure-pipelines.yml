@@ -32,3 +32,9 @@ steps:
     targetPath: 'src\PFJSR\bin\Release'
     artifact: 'dist'
     publishLocation: 'pipeline'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'release_node.md'
+    ArtifactName: 'release_node'
+    publishLocation: 'Container'
