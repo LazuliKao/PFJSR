@@ -6,4 +6,4 @@
 # 核心功能参考自
 ## [NJSR](https://github.com/zhkj-liuxiaohua/BDSJSR2)
 
-# 感谢@liuxiaohua维护的BDSNetRunner,极大地降低了插件开发成本
+### 感谢@liuxiaohua维护的BDSNetRunner,极大地降低了插件开发成本
