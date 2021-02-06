@@ -27,12 +27,14 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Pipeline.Workspace)'
+    targetPath: 'src\PFJSR\bin\Release'
     artifact: 'dist'
     publishLocation: 'pipeline'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'release_node.md'
+    ArtifactName: 'release_node'
+    publishLocation: 'Container'
