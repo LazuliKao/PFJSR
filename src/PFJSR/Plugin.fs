@@ -12,22 +12,20 @@ module PluginMain=
             for file in (DirPath|>Directory.GetFiles) do
                  //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
                  if file.ToLower().EndsWith(".js") then file|>Loader.LoadJSRScript
-    let LoadNativeScripts()=
+    let LoadVanillaScripts()=
         if Data.Config.VanillaScripts.Enable then
             let DirPath:string=Data.Config.VanillaScripts.Path|>Path.GetFullPath
             if DirPath|>Directory.Exists|>not then
                 DirPath|>Directory.CreateDirectory|>ignore
                 "创建NativeScripts目录:"+Data.Config.VanillaScripts.Path|>Console.WriteLine
-            let mutable startTime=5000
             for file in (DirPath|>Directory.GetFiles) do
                  //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
                  if file.ToLower().EndsWith(".js") then 
-                    (file,startTime)|>Loader.LoadNativeScript
-                    startTime<-startTime+1000
+                    file|>Loader.LoadVanillaScript
     let Init(_api:MCCSAPI) =
         API.api <- _api
         LoadJSRScripts()
-        LoadNativeScripts()
+        LoadVanillaScripts()
         if Data.Config.JSR.HotReload then
             API.api.addBeforeActListener(EventKey.onServerCmd,fun _e->
                 try
