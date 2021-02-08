@@ -12,18 +12,21 @@ module Data=
         let mutable _Enable : bool  = true
         let mutable _Path : string  = "PFJS"
         let mutable _CheckUUID : bool  = true
-        let mutable _HotReload : bool  = true
-        let mutable _ReloadCommand : string  = "pfjsr reload"
+        let mutable _HotReloadEnabled : bool  = true
+        let mutable _HotReloadCommand : string  = "pfjsr reload"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
         member _this.Path with get() =_Path and set value  =_Path<-value
         member _this.CheckUuid with get() =_CheckUUID and set value  =_CheckUUID<-value
-        member _this.HotReload with get() =_HotReload and set value  =_HotReload<-value
-        member _this.ReloadCommand with get() =_ReloadCommand and set value  =_ReloadCommand<-value
+        member _this.HotReloadEnabled with get() =_HotReloadEnabled and set value  =_HotReloadEnabled<-value
+        member _this.HotReloadCommand with get() =_HotReloadCommand and set value  =_HotReloadCommand<-value
     type ConfigModel() =
         let mutable _JSR= new ConfigJSRModel()
         let mutable _VanillaScripts= new ConfigVanillaScriptsModel()
         member _this.JSR with get() =_JSR and set value  =_JSR<-value
         member _this.VanillaScripts with get() =_VanillaScripts and set value  =_VanillaScripts<-value
+        //member val JSR = new ConfigJSRModel() with get, set
+        //member val VanillaScripts = new ConfigVanillaScriptsModel() with get, set
+
     let mutable private _config: ConfigModel = new ConfigModel()
     let mutable private _hasLoaded: bool = false
     let public Config:ConfigModel = 

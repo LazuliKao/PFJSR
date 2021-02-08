@@ -13,12 +13,12 @@ open CSR
                 let commercial:bool = pav.GetValue(pav.Length - 1).Equals("1")
                 mapi <- MCCSAPI(path, Version, commercial)
                 if not (isNull(mapi))  then
-                     printfn "[F#] plugin is Loading."
+                     printfn "[F#-PFJSR] plugin is Loading."
                      System.GC.KeepAlive(mapi);
                      Plugin.onStart(mapi)|>ignore
-                     printfn "[F#] plugin Load Success."
+                     printfn "[F#-PFJSR] plugin Load Success."
                      result <- 0
-            if result = -1 then  printf "[F#] plugin Load failed."
+            if result = -1 then  printf "[F#-PFJSR] plugin Load failed."
             result
         static member  public  onStart(api:MCCSAPI)=
             //TODO  此处需要自行实现

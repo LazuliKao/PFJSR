@@ -1,6 +1,6 @@
 ﻿namespace PFJSR
 open CSR
-open Colorful
+//open Colorful
 open System.IO
 module PluginMain=
     let LoadJSRScripts()=
@@ -24,13 +24,14 @@ module PluginMain=
                     file|>Loader.LoadVanillaScript
     let Init(_api:MCCSAPI) =
         API.api <- _api
+        Console.Setup()
         LoadJSRScripts()
         LoadVanillaScripts()
-        if Data.Config.JSR.HotReload then
+        if Data.Config.JSR.HotReloadEnabled then
             API.api.addBeforeActListener(EventKey.onServerCmd,fun _e->
                 try
                     let e=ServerCmdEvent.getFrom(_e)
-                    if e.cmd.Trim()= Data.Config.JSR.ReloadCommand then
+                    if e.cmd.Trim() = Data.Config.JSR.HotReloadCommand then
                         "正在重载..."|>Console.WriteLine
                         let mutable scriptCount=0
                         let mutable ListenerCount=0

@@ -15,7 +15,7 @@ module Loader=
             let options=new Jint.Options()
             options.AllowClr()|>ignore
             options.AllowClr(typeof<FSharp.Reflection.FSharpType>.Assembly)|>ignore
-            options.AllowClr(typeof<Colorful.Console>.Assembly)|>ignore
+            //options.AllowClr(typeof<Colorful.Console>.Assembly)|>ignore
             options.AllowClr(typeof<Jint.Engine>.Assembly)|>ignore
             options.AllowClr(typeof<Newtonsoft.Json.JsonConvert>.Assembly)|>ignore
             let engine=new Jint.Engine(options)

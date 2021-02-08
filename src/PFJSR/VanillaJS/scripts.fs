@@ -10,7 +10,7 @@ module VanillaScripts=
             try
                 Tasks.Task.Run(fun ()->
                     try
-                        Thread.Sleep(1000)
+                        Thread.Sleep(5000)
                         let id="pfjsrvs"+System.Guid.NewGuid().GetHashCode().ToString()
                         ($"server.registerSystem(0, 0).listenForEvent('pfjsr:{id}', (e_{id})=>{{try{{eval(e_{id}.data);}}catch(err){{console.log(err);}}}});",
                             fun e->
