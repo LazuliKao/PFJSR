@@ -2,8 +2,7 @@
   "profiles": {
     "PFJSR": {
       "commandName": "Executable",
-      "executablePath": "C:\\Users\\gaoxi\\Documents\\GitHub\\CSR\\1.16.201.2\\MCDllInject.exe",
-      "commandLineArgs": "bedrock_server.exe MCModDll ",
+      "executablePath": "C:\\Users\\gaoxi\\Documents\\GitHub\\CSR\\1.16.201.2\\bedrock_server.exe",
       "workingDirectory": "C:\\Users\\gaoxi\\Documents\\GitHub\\CSR\\1.16.201.2\\"
     }
   }

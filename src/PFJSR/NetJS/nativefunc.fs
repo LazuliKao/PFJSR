@@ -192,7 +192,7 @@ module NativeFunc=
                         try
                             let mutable ret:string = null;
                             try
-                                    ret <- PFJSRBDSAPI.Ex.Localrequest(u, m, p)
+                                    ret <- Extensions.Localrequest u m p
                             with _-> ()
                             if f|>isNull|>not then
                                 try
