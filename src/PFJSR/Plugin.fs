@@ -58,10 +58,10 @@ module PluginMain=
             )|>ignore      
         
 
-        API.api.addBeforeActListener(EventKey.onMobHurt,fun _e->
-            (_e|>MobHurtEvent.getFrom|>Newtonsoft.Json.Linq.JObject.FromObject).ToString()|>Console.WriteLine
-            true
-        )
+        //API.api.addBeforeActListener(EventKey.onMobHurt,fun _e->
+        //    (_e|>MobHurtEvent.getFrom|>Newtonsoft.Json.Linq.JObject.FromObject).ToString()|>Console.WriteLine
+        //    true
+        //)
         //System.Threading.Tasks.Task.Run(fun ()->
         //    let script: string=System.IO.File.ReadAllText("Logging.js")
         //    System.Threading.Thread.Sleep(5000)
