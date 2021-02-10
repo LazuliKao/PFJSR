@@ -140,6 +140,7 @@ module NativeFunc=
         type setscoreById_delegate = delegate of int64*string*int->int
         type getAllScore_delegate = delegate of unit -> string
         type setAllScore_delegate = delegate of string->bool
+        type getMapColors_delegate = delegate of int*int*int*int->string
         type Instance(scriptName:string,engine:Jint.Engine) =
             let CheckUuid(uuid:string)=
                 if String.IsNullOrWhiteSpace(uuid) then
@@ -442,16 +443,18 @@ module NativeFunc=
                                 ($"在脚本\"{scriptName}\"执行\"postTick时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                    |>api.postTick 
-            let getAllScore_fun()=(
+            let getAllScore_fun()=
                 AssertCommercial()
                 api.getAllScore()
-            )
-            let setAllScore_fun(data) =(
+            let setAllScore_fun(data) =
                 AssertCommercial()
                 data|>api.setAllScore
-            )
-            let getscoreById_fun(id)(st) =(id,st)|>api.getscoreById
+            let getscoreById_fun(id)(objname) =(id,objname)|>api.getscoreById
             let setscoreById_fun(id)(objname)(value) =(id,objname,value)|>api.setscoreById
+            let getMapColors_fun(x)(y)(z)(d)=
+                AssertCommercial()
+                (x,y,z,d)|>api.getMapColors
+
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -511,4 +514,5 @@ module NativeFunc=
             member _this.setscoreById=setscoreById_delegate(setscoreById_fun)
             member _this.getAllScore=getAllScore_delegate(getAllScore_fun)
             member _this.setAllScore=setAllScore_delegate(setAllScore_fun)
+            member _this.getMapColors=getMapColors_delegate(getMapColors_fun)
 
