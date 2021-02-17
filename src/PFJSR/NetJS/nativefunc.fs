@@ -13,7 +13,7 @@ open System.Net
 open System.Text
 open System.Collections
 module NativeFunc=
-    let cid:int=0
+    let cid:int=Int32.MinValue
     let NextID()=
         Interlocked.Increment(ref cid)
     module Basic=
@@ -283,7 +283,9 @@ module NativeFunc=
         type getPlayerIP_delegate = delegate of string->string
         type request_delegate = delegate of string*string*string*Action<obj> -> unit
         type setTimeout_delegate = delegate of JsValue*int->int
+        type clearTimeout_delegate = delegate of int->unit
         type setInterval_delegate = delegate of JsValue*int->int
+        type clearInterval_delegate = delegate of int->unit
         type runScript_delegate = delegate of JsValue->unit
         type postTick_delegate = delegate of JsValue->unit
         type getscoreById_delegate = delegate of int64*string->int
@@ -335,6 +337,13 @@ module NativeFunc=
                     )
                     t.Start()
                 id
+            let clearTimeout_fun(key:int)=
+                match timerList.TryGetValue key with
+                | true, t -> 
+                    try if t.Enabled then t.Stop() with _->()
+                    try t.Dispose() with _->()
+                    timerList.Remove(key)|>ignore
+                | _ -> ("在脚本\""+scriptName+"\"执行\"clearTimeout\"无效",new exn($"未找到id:{id}对应的Timer实例"))|>Console.WriteLineErr
             let setInterval_fun(o:JsValue)(ms:int)=
                 let id=NextID()
                 if o|>isNull|>not then
@@ -353,6 +362,13 @@ module NativeFunc=
                     )
                     t.Start()
                 id
+            let clearInterval_fun(key:int)=
+                match timerList.TryGetValue key with
+                | true, t -> 
+                    try if t.Enabled then t.Stop() with _->()
+                    try t.Dispose() with _->()
+                    timerList.Remove(key)|>ignore
+                | _ -> ("在脚本\""+scriptName+"\"执行\"clearInterval\"无效",new exn($"未找到id:{id}对应的Timer实例"))|>Console.WriteLineErr
             let runScript_fun(o:JsValue)=
                 if not (o|>isNull) then
                     try
@@ -637,7 +653,9 @@ module NativeFunc=
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
+            member _this.clearTimeout=clearTimeout_delegate(clearTimeout_fun)
             member _this.setInterval=setInterval_delegate(setInterval_fun)
+            member _this.clearInterval=clearInterval_delegate(clearInterval_fun)
             member _this.runScript=runScript_delegate(runScript_fun)
             member _this.request=request_delegate(request_fun)
             member _this.addBeforeActListener=addBeforeActListener_delegate(addBeforeActListener_fun)      
