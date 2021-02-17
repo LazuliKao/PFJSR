@@ -94,7 +94,7 @@ module NativeFunc=
         type getWorkingPath_delegate = delegate of unit-> string
         type startLocalHttpListen_delegate = delegate of int*Func<bool,string,string>->int
         type stopLocalHttpListen_delegate = delegate of int ->bool
-        type resetLocalHttpListener_delegate = delegate of int*Action->bool
+        type resetLocalHttpListener_delegate = delegate of int*Func<bool,string,string>->bool
         let shares=new Collections.Generic.Dictionary<string,JsValue>()
         type Model()=
             let mkdir_fun=
@@ -355,6 +355,8 @@ module NativeFunc=
         type getAllScore_delegate = delegate of unit -> string
         type setAllScore_delegate = delegate of string->bool
         type getMapColors_delegate = delegate of int*int*int*int->string
+        type exportPlayersData_delegate = delegate of unit->string
+        type importPlayersData_delegate = delegate of string->bool
         type Model(scriptName:string,engine:Jint.Engine) =
             let CheckUuid(uuid:string)=
                 if String.IsNullOrWhiteSpace(uuid) then
@@ -668,7 +670,12 @@ module NativeFunc=
             let getMapColors_fun(x)(y)(z)(d)=
                 AssertCommercial()
                 (x,y,z,d)|>api.getMapColors
-
+            let exportPlayersData_fun()=
+                AssertCommercial()
+                api.exportPlayersData()
+            let importPlayersData_fun(data:string)=
+                AssertCommercial()
+                data|>api.importPlayersData
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -729,4 +736,6 @@ module NativeFunc=
             member _this.getAllScore=getAllScore_delegate(getAllScore_fun)
             member _this.setAllScore=setAllScore_delegate(setAllScore_fun)
             member _this.getMapColors=getMapColors_delegate(getMapColors_fun)
+            member _this.exportPlayersData=exportPlayersData_delegate(exportPlayersData_fun)
+            member _this.importPlayersData=importPlayersData_delegate(importPlayersData_fun)
 
