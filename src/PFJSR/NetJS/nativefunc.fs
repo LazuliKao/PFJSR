@@ -9,81 +9,284 @@ open System
 open System.Threading.Tasks
 open System.Threading
 open System.IO
+open System.Net
+open System.Text
+open System.Collections
 
+(*
+/// <summary>
+/// 开启一个本地http监听（仅限localhost和127.0.0.1访问）
+/// </summary>
+static STARTLOCALHTTPLISTEN cs_startLocalHttpListen = (port, f) =>
+{
+    int hid = -1;
+    try
+    {
+        HttpListener h = new HttpListener();
+        string local1 = "localhost:";
+        string local2 = "127.0.0.1:";
+        string head = "http://";
+        int iport = int.Parse(JSString(port));
+        h.Prefixes.Add(head + local1 + iport + '/');
+        h.Prefixes.Add(head + local2 + iport + '/');
+        h.Start();
+        AsyncCallback cb = makeReqCallback(f);
+        httpfuncs[h] = cb;
+        h.BeginGetContext(cb, h);
+        hid = new Random().Next();
+        httplis[hid] = h;
+    } catch (Exception e) {
+        if (!(e is HttpListenerException))
+            Console.WriteLine(e.StackTrace);
+    }
+    return hid;
+};
+/// <summary>
+/// 关闭一个http端口侦听
+/// </summary>
+static STOPLOCALHTTPLISTEN cs_stopLocalHttpListen = (hid) =>
+{
+    var h = httplis[hid] as HttpListener;
+    if (h != null)
+    {
+        try
+        {
+            httpfuncs.Remove(h);
+            httplis.Remove(hid);
+            h.Stop();
+            return true;
+        }
+        catch { }
+    }
+    return false;
+};
+/// <summary>
+/// 重设已有侦听器的监听
+/// </summary>
+static RESETLOCALHTTPLISTENER cs_resetLocalHttpListener = (hid, f) =>
+{
+    var h = httplis[hid] as HttpListener;
+    if (h != null)
+    {
+        try
+        {
+            AsyncCallback cb = makeReqCallback(f);
+            httpfuncs[h] = cb;
+            return true;
+        }
+        catch { }
+    }
+    return false;
+};
+
+*)
 module NativeFunc=
     module Basic=
-        let shares  = new Collections.Generic.Dictionary<string,JsValue>()
         type mkdir_delegate = delegate of string-> bool
-        let mkdir=
-           mkdir_delegate(fun dirname ->
-                   let mutable dir :DirectoryInfo= null;
-                   if not (dirname|>isNull) then
-                       try
-                           dir <- Directory.CreateDirectory(dirname)
-                       with _->()
-                   not (dir|>isNull)
-               )
         type log_delegate = delegate of string -> unit
-        let log=log_delegate(fun e-> 
-                //if e.[0]<>'*' then
-                    Console.log(e)
-                //else
-                    //if e.StartsWith("*") then
-                    //    Console.log("尝试自动创建目录："+e.Substring(1))
-            )
         type fileReadAllText_delegate = delegate of string -> string
-        let fileReadAllText=
-            fileReadAllText_delegate (fun e->  
-                try
-                    e|>File.ReadAllText 
-                with _ -> null
-                )
         type fileWriteAllText_delegate = delegate of string*string -> bool
-        let fileWriteAllText=
-            fileWriteAllText_delegate(fun f c ->
-                try
-                    (f,c)|>File.WriteAllText
-                    true
-                with _ -> false
-                )
         type fileWriteLine_delegate = delegate of string*string-> bool
-        let fileWriteLine=
-            fileWriteLine_delegate(fun f c ->
-                try
-                    (f,[c])|>File.AppendAllLines
-                    true
-                with _ -> false
-                )
         type TimeNow_delegate = delegate of unit -> string
-        let TimeNow=
-            TimeNow_delegate(fun _ ->
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
-                )
         type setShareData_delegate = delegate of string*JsValue-> unit
-        let setShareData=
-            setShareData_delegate(fun k o ->
-                    if shares.ContainsKey(k) then shares.[k] <- o else shares.Add(k,o)
-                )
         type getShareData_delegate = delegate of string -> JsValue
-        let getShareData=
-            getShareData_delegate(fun k ->
-                    if shares.ContainsKey(k) then shares.[k] else Jint.Native.Undefined.Instance 
-                    )
         type removeShareData_delegate = delegate of string -> JsValue
-        let removeShareData=
-            removeShareData_delegate(fun k->
-                    if shares.ContainsKey(k) then 
-                        let o=shares.[k]
-                        k|> shares.Remove|>ignore
-                        o
-                    else
-                        Jint.Native.Undefined.Instance
-                )
         type getWorkingPath_delegate = delegate of unit-> string
-        let getWorkingPath=
-            getWorkingPath_delegate(fun _ ->
-                    AppDomain.CurrentDomain.BaseDirectory
+        type startLocalHttpListen_delegate = delegate of int*Func<bool,string,string>->int
+        type stopLocalHttpListen_delegate = delegate of int ->bool
+        type resetLocalHttpListener_delegate = delegate of int*Action->bool
+        let shares=new Collections.Generic.Dictionary<string,JsValue>()
+        type Model()=
+            let mkdir_fun=
+               mkdir_delegate(fun dirname ->
+                       let mutable dir :DirectoryInfo= null;
+                       if not (dirname|>isNull) then
+                           try
+                               dir <- Directory.CreateDirectory(dirname)
+                           with _->()
+                       not (dir|>isNull)
+                   )
+            let log_fun=log_delegate(fun e-> 
+                    //if e.[0]<>'*' then
+                        Console.log(e)
+                    //else
+                        //if e.StartsWith("*") then
+                        //    Console.log("尝试自动创建目录："+e.Substring(1))
                 )
+            let fileReadAllText_fun=
+                fileReadAllText_delegate (fun e->  
+                    try
+                        e|>File.ReadAllText 
+                    with _ -> null
+                    )
+            let fileWriteAllText_fun=
+                fileWriteAllText_delegate(fun f c ->
+                    try
+                        (f,c)|>File.WriteAllText
+                        true
+                    with _ -> false
+                    )
+            let fileWriteLine_fun=
+                fileWriteLine_delegate(fun f c ->
+                    try
+                        (f,[c])|>File.AppendAllLines
+                        true
+                    with _ -> false
+                    )
+            let TimeNow_fun=
+                TimeNow_delegate(fun _ ->
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    )
+            let setShareData_fun=
+                setShareData_delegate(fun k o ->
+                        if shares.ContainsKey(k) then shares.[k] <- o else shares.Add(k,o)
+                    )
+            let getShareData_fun=
+                getShareData_delegate(fun k ->
+                        if shares.ContainsKey(k) then shares.[k] else Jint.Native.Undefined.Instance 
+                        )
+            let removeShareData_fun=
+                removeShareData_delegate(fun k->
+                        if shares.ContainsKey(k) then 
+                            let o=shares.[k]
+                            k|> shares.Remove|>ignore
+                            o
+                        else
+                            Jint.Native.Undefined.Instance
+                    )
+            let getWorkingPath_fun=
+                getWorkingPath_delegate(fun _ ->
+                        AppDomain.CurrentDomain.BaseDirectory
+                    )
+            // 本地侦听器
+            let httplis:Hashtable = new Hashtable();
+            // 侦听函数
+            let httpfuncs:Hashtable = new Hashtable();
+            let makeReqCallback(f:Func<bool,string,string>):AsyncCallback=
+                let cb:AsyncCallback=new AsyncCallback(fun x->
+                    let listener:HttpListener=x.AsyncState:?>HttpListener
+                    try
+                        //If we are not listening this line throws a ObjectDisposedException.
+                        let context:HttpListenerContext=listener.EndGetContext(x)
+                        if f|>isNull|>not then// 此处处理自定义方法
+                            let req = context.Request
+                            let resp = context.Response
+                            try
+                                let ret =f.Invoke(false,Newtonsoft.Json.JsonConvert.SerializeObject(req)
+                                //(new JObject [|
+                                //    new JProperty("AcceptTypes",req.AcceptTypes)
+                                //    new JProperty("ContentEncoding",req.ContentEncoding)
+                                //    new JProperty("ContentLength64",req.ContentLength64)
+                                //    new JProperty("ContentType",req.ContentType)
+                                //    new JProperty("Cookies",req.Cookies)
+                                //    new JProperty("HasEntityBody",req.HasEntityBody)
+                                //    new JProperty("Headers",req.Headers)
+                                //    new JProperty("HttpMethod",req.HttpMethod)
+                                //    new JProperty("InputStream",readStream(req.InputStream, req.ContentEncoding))
+                                //    new JProperty("IsAuthenticated",req.IsAuthenticated)
+                                //    new JProperty("IsLocal",req.IsLocal)
+                                //    new JProperty("IsSecureConnection",req.IsSecureConnection)
+                                //    new JProperty("IsWebSocketRequest",req.IsWebSocketRequest)
+                                //    new JProperty("KeepAlive",req.KeepAlive)
+                                //    new JProperty("LocalEndPoint",new JObject[|
+                                //        new JProperty("Address",req.LocalEndPoint.Address.ToString())
+                                //        new JProperty("AddressFamily",req.LocalEndPoint.AddressFamily)
+                                //        new JProperty("Port",req.LocalEndPoint.Port)
+                                //    |]
+                                //(*
+                                //= req.,
+                                //QueryString = readQueryString(req.QueryString),
+                                //RawUrl = req.RawUrl,
+                                //RemoteEndPoint = new
+                                //{
+                                //    Address = req.RemoteEndPoint.Address.ToString(),
+                                //    AddressFamily = req.RemoteEndPoint.AddressFamily,
+                                //    Port = req.RemoteEndPoint.Port
+                                //},
+                                //RequestTraceIdentifier = req.RequestTraceIdentifier,
+                                //ServiceName = req.ServiceName,
+                                //TransportContext = req.TransportContext,
+                                //Url = req.Url,
+                                //UrlReferrer = req.UrlReferrer,
+                                //UserAgent = req.UserAgent,
+                                //UserHostAddress = req.UserHostAddress,
+                                //UserHostName = req.UserHostName,
+                                //UserLanguages = req.UserLanguages
+                                //*)
+                                //    new JProperty("ProtocolVersion",req.ProtocolVersion)
+                                //    )
+                                //|]).ToString()
+                                )
+                                if ret|>isNull|>not then
+                                    resp.ContentType <- "text/plain;charset<-UTF-8"//告诉客户端返回的ContentType类型为纯文本格式，编码为UTF-8
+                                    resp.AddHeader("Access-Control-Allow-Origin", "*")
+                                    resp.AddHeader("Content-type", "text/plain")//添加响应头信息
+                                    resp.ContentEncoding <- Encoding.UTF8
+                                    resp.StatusDescription <- "200"//获取或设置返回给客户端的 HTTP 状态代码的文本说明。
+                                    resp.StatusCode <- 200// 获取或设置返回给客户端的 HTTP 状态代码。
+                                    let d = Encoding.UTF8.GetBytes(ret)
+                                    resp.OutputStream.Write(d, 0, d.Length)
+                                else resp.StatusDescription <- "404";resp.StatusCode <- 404
+                            with
+                                | :? HttpListenerException ->resp.StatusDescription <- "404";resp.StatusCode <- 404
+                                | ex-> 
+                                    Console.WriteLineErr("makeReqCallback.1",ex)
+                                    resp.StatusDescription <- "404";resp.StatusCode <- 404
+                        context.Response.Close();
+                    with
+                        | :? HttpListenerException->()
+                        | ex->
+                            Console.WriteLineErr("makeReqCallback.2",ex)
+                    let mcb = httpfuncs.[listener] :?> AsyncCallback;
+                    if mcb|>isNull|>not then
+                        listener.BeginGetContext(mcb, listener)|>ignore
+                )
+                cb
+            let startLocalHttpListen_fun=startLocalHttpListen_delegate(fun port f->
+                    let mutable hid:int= -1
+                    try
+                        let h:HttpListener = new HttpListener()
+                        let local1:string = "localhost:"
+                        let local2:string= "127.0.0.1:"
+                        let head:string = "http://"
+                        let iport:int = port
+                        h.Prefixes.Add(head + local1 + iport.ToString() + "/")
+                        h.Prefixes.Add(head + local2 + iport.ToString() + "/")
+                        h.Start()
+                        let cb:AsyncCallback = makeReqCallback(f)
+                        httpfuncs.[h] <- cb
+                        h.BeginGetContext(cb, h)|>ignore
+                        hid<-((new Random()).Next())
+                        httplis.[hid] <- h
+                    with 
+                        | :? HttpListenerException -> ()
+                        | ex-> ("err",ex)|>Console.WriteLineErr 
+                    hid
+            )
+            let stopLocalHttpListen_fun=stopLocalHttpListen_delegate(fun i->
+                let h = httplis.[i] :?> HttpListener
+                if h|>isNull|>not then
+                    try
+                        httpfuncs.Remove(h)
+                        httplis.Remove(i)
+                        h.Stop()
+                        true
+                    with _->false
+                else false
+            )
+            member _this.mkdir=mkdir_fun
+            member _this.log=log_fun
+            member _this.fileReadAllText=fileReadAllText_fun
+            member _this.fileWriteAllText=fileWriteAllText_fun
+            member _this.fileWriteLine=fileWriteLine_fun
+            member _this.TimeNow=TimeNow_fun
+            member _this.setShareData=setShareData_fun
+            member _this.getShareData=getShareData_fun
+            member _this.removeShareData=removeShareData_fun
+            member _this.getWorkingPath=getWorkingPath_fun
+            member _this.startLocalHttpListen=startLocalHttpListen_fun
+            member _this.stopLocalHttpListen=stopLocalHttpListen_fun
+        let Instance=new Model()
     module Core =
         type addBeforeActListener_delegate = delegate of string*Func<string,Object> -> int
         type addAfterActListener_delegate = delegate of string*Func<string,Object> -> int
@@ -141,7 +344,7 @@ module NativeFunc=
         type getAllScore_delegate = delegate of unit -> string
         type setAllScore_delegate = delegate of string->bool
         type getMapColors_delegate = delegate of int*int*int*int->string
-        type Instance(scriptName:string,engine:Jint.Engine) =
+        type Model(scriptName:string,engine:Jint.Engine) =
             let CheckUuid(uuid:string)=
                 if String.IsNullOrWhiteSpace(uuid) then
                     let funcname = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
@@ -266,7 +469,7 @@ module NativeFunc=
                 if cmd.StartsWith("system ") then
                     let cli = new Diagnostics.Process()
                     cli.StartInfo.FileName <- "cmd"
-                    cli.StartInfo.WorkingDirectory<-Basic.getWorkingPath.Invoke()
+                    cli.StartInfo.WorkingDirectory<-Basic.Instance.getWorkingPath.Invoke()
                     cli.StartInfo.Arguments <- $"/C \"{cmd.Substring(7)}\""
                     //cli.StartInfo.RedirectStandardOutput <- true
                     //cli.StartInfo.RedirectStandardInput <- true
@@ -291,7 +494,7 @@ module NativeFunc=
                     l|>api.logout
                 else
                     Console.log("[Folder Creator Inside]尝试自动创建目录："+l.Substring(1))
-                    Basic.mkdir.Invoke(l.Substring(1))|>ignore
+                    Basic.Instance.mkdir.Invoke(l.Substring(1))|>ignore
             let getOnLinePlayers_fun()= 
                 let result=api.getOnLinePlayers()
                 if result|>String.IsNullOrEmpty then "[]" else result

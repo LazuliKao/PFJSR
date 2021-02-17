@@ -22,7 +22,7 @@ module Loader=
             (
                 engine,
                 (filePath|>File.ReadAllText),
-                new NativeFunc.Core.Instance(scriptName,engine)
+                new NativeFunc.Core.Model(scriptName,engine)
             )|>JSR.CreateEngine|>ignore
             LoadedScripts<-new ScriptItemModel(scriptName, filePath)::LoadedScripts
             scriptName+"加载完成！"|>Console.WriteLine
