@@ -274,6 +274,16 @@ module NativeFunc=
                     with _->false
                 else false
             )
+            let resetLocalHttpListener_fun=resetLocalHttpListener_delegate(fun i f->
+                let h = httplis.[i] :?> HttpListener;
+                if h|>isNull|>not then
+                    try
+                        let cb:AsyncCallback = makeReqCallback(f);
+                        httpfuncs.[h] <- cb;
+                        true
+                    with _->false
+                else false
+            )
             member _this.mkdir=mkdir_fun
             member _this.log=log_fun
             member _this.fileReadAllText=fileReadAllText_fun
@@ -286,6 +296,7 @@ module NativeFunc=
             member _this.getWorkingPath=getWorkingPath_fun
             member _this.startLocalHttpListen=startLocalHttpListen_fun
             member _this.stopLocalHttpListen=stopLocalHttpListen_fun
+            member _this.resetLocalHttpListener=resetLocalHttpListener_fun
         let Instance=new Model()
     module Core =
         type addBeforeActListener_delegate = delegate of string*Func<string,Object> -> int
