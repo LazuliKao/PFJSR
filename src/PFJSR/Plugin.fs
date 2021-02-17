@@ -46,7 +46,7 @@ module PluginMain=
                             runner.core.AfterActListeners.Clear()
                             scriptCount<-scriptCount+1
                         JSR.RunnerList<-[]
-                        NativeFunc.Basic.shares.Clear()
+                        NativeFunc.Reset()
                         LoadJSRScripts()
                         $"重载成功：已删除来自 {scriptCount} 个脚本的 {ListenerCount} 个监听"|>Console.WriteLine
                         false

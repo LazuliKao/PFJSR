@@ -12,75 +12,10 @@ open System.IO
 open System.Net
 open System.Text
 open System.Collections
-
-(*
-/// <summary>
-/// 开启一个本地http监听（仅限localhost和127.0.0.1访问）
-/// </summary>
-static STARTLOCALHTTPLISTEN cs_startLocalHttpListen = (port, f) =>
-{
-    int hid = -1;
-    try
-    {
-        HttpListener h = new HttpListener();
-        string local1 = "localhost:";
-        string local2 = "127.0.0.1:";
-        string head = "http://";
-        int iport = int.Parse(JSString(port));
-        h.Prefixes.Add(head + local1 + iport + '/');
-        h.Prefixes.Add(head + local2 + iport + '/');
-        h.Start();
-        AsyncCallback cb = makeReqCallback(f);
-        httpfuncs[h] = cb;
-        h.BeginGetContext(cb, h);
-        hid = new Random().Next();
-        httplis[hid] = h;
-    } catch (Exception e) {
-        if (!(e is HttpListenerException))
-            Console.WriteLine(e.StackTrace);
-    }
-    return hid;
-};
-/// <summary>
-/// 关闭一个http端口侦听
-/// </summary>
-static STOPLOCALHTTPLISTEN cs_stopLocalHttpListen = (hid) =>
-{
-    var h = httplis[hid] as HttpListener;
-    if (h != null)
-    {
-        try
-        {
-            httpfuncs.Remove(h);
-            httplis.Remove(hid);
-            h.Stop();
-            return true;
-        }
-        catch { }
-    }
-    return false;
-};
-/// <summary>
-/// 重设已有侦听器的监听
-/// </summary>
-static RESETLOCALHTTPLISTENER cs_resetLocalHttpListener = (hid, f) =>
-{
-    var h = httplis[hid] as HttpListener;
-    if (h != null)
-    {
-        try
-        {
-            AsyncCallback cb = makeReqCallback(f);
-            httpfuncs[h] = cb;
-            return true;
-        }
-        catch { }
-    }
-    return false;
-};
-
-*)
 module NativeFunc=
+    let cid:int=0
+    let NextID()=
+        Interlocked.Increment(ref cid)
     module Basic=
         type mkdir_delegate = delegate of string-> bool
         type log_delegate = delegate of string -> unit
@@ -298,7 +233,7 @@ module NativeFunc=
             member _this.stopLocalHttpListen=stopLocalHttpListen_fun
             member _this.resetLocalHttpListener=resetLocalHttpListener_fun
         let Instance=new Model()
-    module Core =
+    module Core=
         type addBeforeActListener_delegate = delegate of string*Func<string,Object> -> int
         type addAfterActListener_delegate = delegate of string*Func<string,Object> -> int
         type removeBeforeActListener_delegate = delegate of string*int -> unit
@@ -341,15 +276,16 @@ module NativeFunc=
         type removePlayerSidebar_delegate = delegate of string -> bool
         type getPlayerPermissionAndGametype_delegate = delegate of string -> string
         type setPlayerPermissionAndGametype_delegate = delegate of string*string -> bool
-        type disconnectClient_delegate = delegate of string*string -> bool
-        type sendText_delegate = delegate of string*string -> bool
-        type getscoreboard_delegate = delegate of string*string -> int
-        type setscoreboard_delegate = delegate of string*string*int -> bool
-        type getPlayerIP_delegate = delegate of string -> string
+        type disconnectClient_delegate = delegate of string*string->bool
+        type sendText_delegate = delegate of string*string->bool
+        type getscoreboard_delegate = delegate of string*string->int
+        type setscoreboard_delegate = delegate of string*string*int->bool
+        type getPlayerIP_delegate = delegate of string->string
         type request_delegate = delegate of string*string*string*Action<obj> -> unit
-        type setTimeout_delegate = delegate of JsValue*int -> unit
-        type runScript_delegate = delegate of JsValue -> unit
-        type postTick_delegate = delegate of JsValue -> unit
+        type setTimeout_delegate = delegate of JsValue*int->int
+        type setInterval_delegate = delegate of JsValue*int->int
+        type runScript_delegate = delegate of JsValue->unit
+        type postTick_delegate = delegate of JsValue->unit
         type getscoreById_delegate = delegate of int64*string->int
         type setscoreById_delegate = delegate of int64*string*int->int
         type getAllScore_delegate = delegate of unit -> string
@@ -357,7 +293,8 @@ module NativeFunc=
         type getMapColors_delegate = delegate of int*int*int*int->string
         type exportPlayersData_delegate = delegate of unit->string
         type importPlayersData_delegate = delegate of string->bool
-        type Model(scriptName:string,engine:Jint.Engine) =
+        let timerList=new System.Collections.Generic.Dictionary<int,System.Timers.Timer>()
+        type Model(scriptName:string,engine:Jint.Engine)=
             let CheckUuid(uuid:string)=
                 if String.IsNullOrWhiteSpace(uuid) then
                     let funcname = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
@@ -380,21 +317,42 @@ module NativeFunc=
                 ("在脚本\""+scriptName+"\"执行\"remove"+a1+"ActListener\"无效",new exn( "参数2的值仅可以通过\"add"+a1+"ActListener\"结果获得"))|>Console.WriteLineErr
             let _BeforeActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
             let _AfterActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
-            let setTimeout_fun(o:JsValue)(ms:int)= 
-                if not (o|>isNull) then
-                    Task.Run(fun _->
-                    (
+            let setTimeout_fun(o:JsValue)(ms:int):int= 
+                let id=NextID()
+                if o|>isNull|>not then
+                    let t=new System.Timers.Timer(float ms,AutoReset=false)
+                    timerList.Add(id,t)
+                    t.Elapsed.AddHandler(fun _ _->
                         try
-                            ms|>Thread.Sleep
                             if o.IsString() then
                                 engine.Execute(o.ToString())|>ignore
                             else
                                 o.Invoke()|>ignore
                         with ex->
-                        (
                             ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
-                        ) 
-                    ))|>ignore
+                        timerList.Remove(id)|>ignore
+                        t.Dispose()
+                    )
+                    t.Start()
+                id
+            let setInterval_fun(o:JsValue)(ms:int)=
+                let id=NextID()
+                if o|>isNull|>not then
+                    let t=new System.Timers.Timer(float ms,AutoReset=true)
+                    timerList.Add(id,t)
+                    t.Elapsed.AddHandler(fun _ _->
+                        try
+                            if o.IsString() then
+                                engine.Execute(o.ToString())|>ignore
+                            else
+                                o.Invoke()|>ignore
+                        with ex->
+                            ($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                        timerList.Remove(id)|>ignore
+                        t.Dispose()
+                    )
+                    t.Start()
+                id
             let runScript_fun(o:JsValue)=
                 if not (o|>isNull) then
                     try
@@ -679,6 +637,7 @@ module NativeFunc=
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
+            member _this.setInterval=setInterval_delegate(setInterval_fun)
             member _this.runScript=runScript_delegate(runScript_fun)
             member _this.request=request_delegate(request_fun)
             member _this.addBeforeActListener=addBeforeActListener_delegate(addBeforeActListener_fun)      
@@ -738,4 +697,9 @@ module NativeFunc=
             member _this.getMapColors=getMapColors_delegate(getMapColors_fun)
             member _this.exportPlayersData=exportPlayersData_delegate(exportPlayersData_fun)
             member _this.importPlayersData=importPlayersData_delegate(importPlayersData_fun)
-
+    let Reset()=
+        for t in Core.timerList.Values do
+            try if t.Enabled then t.Stop() with _->()
+            try t.Dispose() with _->()
+        Core.timerList.Clear()
+        try Basic.shares.Clear() with ex->("重置ShareData出错",ex)|>Console.WriteLineErr
