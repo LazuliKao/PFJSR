@@ -16,7 +16,7 @@
      >```js
      >let id = add*ActListener("onLoadName",e => {});
      >```
-- #### [变更] `remove*ActListener`方法重载(由`add*ActListener`返回值获取)：
+- #### [变更] `remove*ActListener`方法重载：
      >```js
      >//示例功能：移除当前脚本的所有"onLoadName"监听
      >//参数个数：1个
