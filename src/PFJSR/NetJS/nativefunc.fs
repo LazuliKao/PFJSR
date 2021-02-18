@@ -13,9 +13,8 @@ open System.Net
 open System.Text
 open System.Collections
 module NativeFunc=
-    let cid:int=Int32.MinValue
-    let NextID()=
-        Interlocked.Increment(ref cid)
+    let mutable cid:int=Int32.MinValue
+    let NextID()=cid<-Interlocked.Increment(ref cid);cid
     module Basic=
         type mkdir_delegate = delegate of string-> bool
         type log_delegate = delegate of string -> unit
@@ -234,10 +233,10 @@ module NativeFunc=
             member _this.resetLocalHttpListener=resetLocalHttpListener_fun
         let Instance=new Model()
     module Core=
-        type addBeforeActListener_delegate = delegate of string*Func<string,Object> -> int
-        type addAfterActListener_delegate = delegate of string*Func<string,Object> -> int
-        type removeBeforeActListener_delegate = delegate of string*int -> unit
-        type removeAfterActListener_delegate = delegate of string*int -> unit
+        type addBeforeActListener_delegate = delegate of string*JsValue -> int
+        type addAfterActListener_delegate = delegate of string*JsValue -> int
+        type removeBeforeActListener_delegate = delegate of JsValue*JsValue -> JsValue
+        type removeAfterActListener_delegate = delegate of JsValue*JsValue -> JsValue
         type setCommandDescribe_delegate = delegate of string*string -> unit
         type runcmd_delegate = delegate of string -> bool
         type logout_delegate = delegate of string -> unit
@@ -315,10 +314,10 @@ module NativeFunc=
                     let err = $"获取方法\"{fn.Remove(fn.Length-4)}\"失败，社区版不支持该方法！"
                     err|>Console.WriteLine
                     err|>failwith 
-            let InvokeRemoveFailed(a1:string)= 
-                ("在脚本\""+scriptName+"\"执行\"remove"+a1+"ActListener\"无效",new exn( "参数2的值仅可以通过\"add"+a1+"ActListener\"结果获得"))|>Console.WriteLineErr
-            let _BeforeActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
-            let _AfterActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab)>()
+            let mutable ActCid:int=Int32.MinValue
+            let NextActID():int=ActCid<-Interlocked.Increment(ref ActCid);ActCid
+            let _BeforeActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab*JsValue)>()
+            let _AfterActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab*JsValue)>()
             let setTimeout_fun(o:JsValue)(ms:int):int= 
                 let id=NextID()
                 if o|>isNull|>not then
@@ -394,10 +393,17 @@ module NativeFunc=
                                 ) 
                         with _-> ()
                     )|>ignore
-            let addBeforeActListener_fun(k)(f:Func<string,Object>)=
+            //let mutable oldf=JsValue.FromObject(engine,false:>obj)
+            let addBeforeActListener_fun(k)(f:JsValue)=
+                //Console.WriteLine(f.Type.ToString())
+                //Console.WriteLine(f.GetHashCode().ToString())
+                //Console.WriteLine(f.Equals(oldf))
+                //oldf<-f
                 let fullFunc=MCCSAPI.EventCab(fun e->
                         try
-                            e|>BaseEvent.getFrom|>SerializeObject|>f.Invoke|>false.Equals|>not
+                            //(engine,e|>BaseEvent.getFrom|>SerializeObject)|>JsValue.FromObject|>f.Invoke|>false.Equals|>not
+                            let result=f.Invoke(new JsString(e|>BaseEvent.getFrom|>SerializeObject))
+                            false|>result.Equals|>not
                             //let got=e|>BaseEvent.getFrom
                             //let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
                             //e.Add("result",new JValue( got.RESULT):>JToken)
@@ -408,49 +414,124 @@ module NativeFunc=
                             with _->()
                             true
                     )
-                let funcHash=f.Method.GetHashCode()
-                _BeforeActListeners.Add(funcHash,k,fullFunc)
+                let fid=NextActID()
+                _BeforeActListeners.Add(fid,k,fullFunc,f)
                 (k,fullFunc)|>api.addBeforeActListener|>ignore
-                funcHash
-            let addAfterActListener_fun(k)(f:Func<string,Object>)=
-                let fullFunc=MCCSAPI.EventCab(fun e->
+                fid
+            let addAfterActListener_fun(k)(f:JsValue)=
+                let fullFunc=MCCSAPI.EventCab(fun basee->
                         try
-                            let got=e|>BaseEvent.getFrom
-                            let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
+                            let got=basee|>BaseEvent.getFrom
+                            let e=got|>Newtonsoft.Json.Linq.JObject.FromObject
                             e.Add("result",new JValue(got.RESULT):>JToken)
-                            e.ToString(Newtonsoft.Json.Formatting.None)|>f.Invoke|>false.Equals|>not
+                            false|>f.Invoke(new JsString(e.ToString Newtonsoft.Json.Formatting.None)).Equals|>not
                         with ex->
                             try
-                            ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
+                            ("在脚本\""+scriptName+"\"执行\""+(int basee.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
                             with _->()
                             true
                     )
-                let funcHash=f.Method.GetHashCode()
-                _AfterActListeners.Add(funcHash,k,fullFunc)
+                let fid=NextActID()
+                _AfterActListeners.Add(fid,k,fullFunc,f)
                 (k,fullFunc)|>api.addAfterActListener|>ignore
-                funcHash
-            let removeBeforeActListener_fun(k)(fhash)=
+                fid
+            let InvokeRemoveFailed(a1:string,a2:exn)=("在脚本\""+scriptName+"\"执行\"remove"+a1+"ActListener\"无效",a2)|>Console.WriteLineErr
+            let removeBeforeActListener_fun(k:JsValue)(f:JsValue):JsValue=
+                let mutable result=JsValue.Undefined
                 try
-                    let index=_BeforeActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
-                    if index <> -1 then
-                        let item=_BeforeActListeners.[index]
-                        let (_,_,getFunc)=item
-                        (k, getFunc )|>api.removeBeforeActListener|>ignore
-                        _BeforeActListeners.Remove(item)|>ignore
+                    if f.IsNull() then 
+                        if k.IsNumber() then
+                            let fid=Jint.Runtime.TypeConverter.ToInt32(k)
+                            let index=_BeforeActListeners.FindIndex(fun (hash,_,_,_)->hash=fid)
+                            if index <> -1 then
+                                let item=_BeforeActListeners.[index]
+                                let (_,cbtype,getFunc,_)=item
+                                (cbtype, getFunc)|>api.removeBeforeActListener|>ignore
+                                _BeforeActListeners.Remove(item)|>ignore
+                            else
+                                InvokeRemoveFailed("Before",new NullReferenceException($"通过参数1的ID({fid})值未找到对应方法"))
+                        else
+                            let all=if k.IsString() then _BeforeActListeners.FindAll(fun (_,cbtype,_,_)->cbtype=k.ToString())
+                                                               else _BeforeActListeners.FindAll(fun (_,_,_,jv)->k.Equals jv)
+                            if all.Count <> 0 then
+                                for item in all do
+                                    let (_,cbtype,getFunc,_)=item
+                                    (cbtype, getFunc )|>api.removeBeforeActListener|>ignore
+                                    _BeforeActListeners.Remove(item)|>ignore
+                                result<-new JsNumber(all.Count)
+                            else
+                                InvokeRemoveFailed("Before",new NullReferenceException("通过参数1的值未找到对应非匿名方法"))
                     else
-                        InvokeRemoveFailed("Before")
-                with _->  InvokeRemoveFailed("Before")
-            let removeAfterActListener_fun(k)(fhash)=
+                        if f.IsNumber() then
+                            let fid=Jint.Runtime.TypeConverter.ToInt32(f)
+                            let index=_BeforeActListeners.FindIndex(fun (hash,cbtype,_,_)->hash=fid && cbtype=k.ToString())
+                            if index <> -1 then
+                                let item=_BeforeActListeners.[index]
+                                let (_,cbtype,getFunc,_)=item
+                                (cbtype, getFunc)|>api.removeBeforeActListener|>ignore
+                                _BeforeActListeners.Remove(item)|>ignore
+                            else
+                                InvokeRemoveFailed("Before",new NullReferenceException($"通过参数2的ID({fid})值未找到对应方法"))
+                        else
+                            let all=_BeforeActListeners.FindAll(fun (_,cbtype,_,jv)->jv.Equals f && cbtype=k.ToString())
+                            if all.Count <> 0 then
+                                for item in all do
+                                    let (_,cbtype,getFunc,_)=item
+                                    (cbtype, getFunc )|>api.removeBeforeActListener|>ignore
+                                    _BeforeActListeners.Remove(item)|>ignore
+                                result<-new JsNumber(all.Count)
+                            else
+                                InvokeRemoveFailed("Before",new NullReferenceException("通过参数2的值未找到对应非匿名方法"))
+                with ex->  InvokeRemoveFailed("Before",ex)
+                result
+            let removeAfterActListener_fun(k:JsValue)(f:JsValue):JsValue=
+                let mutable result=JsValue.Undefined
                 try
-                     let index=_AfterActListeners.FindIndex(fun (hash,_,_)->hash=fhash)
-                     if index <> -1 then
-                            let item=_AfterActListeners.[index]
-                            let (_,_,getFunc)=item
-                            (k, getFunc )|>api.removeAfterActListener|>ignore
-                            _AfterActListeners.Remove(item)|>ignore
-                     else
-                            InvokeRemoveFailed("After")
-                with _->InvokeRemoveFailed("After")
+                    if f.IsNull() then 
+                        if k.IsNumber() then
+                            let fid=Jint.Runtime.TypeConverter.ToInt32(k)
+                            let index=_AfterActListeners.FindIndex(fun (hash,_,_,_)->hash=fid)
+                            if index <> -1 then
+                                let item=_AfterActListeners.[index]
+                                let (_,cbtype,getFunc,_)=item
+                                (cbtype, getFunc)|>api.removeAfterActListener|>ignore
+                                _AfterActListeners.Remove(item)|>ignore
+                            else
+                                InvokeRemoveFailed("After",new NullReferenceException($"通过参数1的ID({fid})值未找到对应方法"))
+                        else
+                            let all=if k.IsString() then _AfterActListeners.FindAll(fun (_,cbtype,_,_)->cbtype=k.ToString())
+                                                               else _AfterActListeners.FindAll(fun (_,_,_,jv)->k.Equals jv)
+                            if all.Count <> 0 then
+                                for item in all do
+                                    let (_,cbtype,getFunc,_)=item
+                                    (cbtype, getFunc )|>api.removeAfterActListener|>ignore
+                                    _AfterActListeners.Remove(item)|>ignore
+                                result<-new JsNumber(all.Count)
+                            else
+                                InvokeRemoveFailed("After",new NullReferenceException("通过参数1的值未找到对应非匿名方法"))
+                    else
+                        if f.IsNumber() then
+                            let fid=Jint.Runtime.TypeConverter.ToInt32(f)
+                            let index=_AfterActListeners.FindIndex(fun (hash,cbtype,_,_)->hash=fid && cbtype=k.ToString())
+                            if index <> -1 then
+                                let item=_AfterActListeners.[index]
+                                let (_,cbtype,getFunc,_)=item
+                                (cbtype, getFunc)|>api.removeAfterActListener|>ignore
+                                _AfterActListeners.Remove(item)|>ignore
+                            else
+                                InvokeRemoveFailed("After",new NullReferenceException($"通过参数2的ID({fid})值未找到对应方法"))
+                        else
+                            let all=_AfterActListeners.FindAll(fun (_,cbtype,_,jv)->jv.Equals f && cbtype=k.ToString())
+                            if all.Count <> 0 then
+                                for item in all do
+                                    let (_,cbtype,getFunc,_)=item
+                                    (cbtype, getFunc )|>api.removeAfterActListener|>ignore
+                                    _AfterActListeners.Remove(item)|>ignore
+                                result<-new JsNumber(all.Count)
+                            else
+                                InvokeRemoveFailed("After",new NullReferenceException("通过参数2的值未找到对应非匿名方法"))
+                with ex->  InvokeRemoveFailed("After",ex)
+                result
             let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
             let runcmd_fun(cmd:string)=
                 if cmd.StartsWith("system ") then

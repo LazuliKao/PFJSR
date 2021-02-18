@@ -36,11 +36,11 @@ module PluginMain=
                         let mutable scriptCount=0
                         let mutable ListenerCount=0
                         for runner in JSR.RunnerList do
-                            for (_,name,func) in runner.core.BeforeActListeners do
+                            for (_,name,func,_) in runner.core.BeforeActListeners do
                                 API.api.removeBeforeActListener(name,func)|>ignore
                                 ListenerCount<-ListenerCount+1
                             runner.core.BeforeActListeners.Clear()
-                            for (_,name,func) in runner.core.AfterActListeners do
+                            for (_,name,func,_) in runner.core.AfterActListeners do
                                 API.api.removeAfterActListener(name,func)|>ignore
                                 ListenerCount<-ListenerCount+1
                             runner.core.AfterActListeners.Clear()
