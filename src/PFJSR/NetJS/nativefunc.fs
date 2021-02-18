@@ -320,6 +320,7 @@ module NativeFunc=
             let _AfterActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab*JsValue)>()
             let setTimeout_fun(o:JsValue)(ms:int):int= 
                 let id=NextID()
+                Console.WriteLine(id.ToString())
                 if o|>isNull|>not then
                     let t=new System.Timers.Timer(float ms,AutoReset=false)
                     timerList.Add(id,t)
@@ -331,8 +332,9 @@ module NativeFunc=
                                 o.Invoke()|>ignore
                         with ex->
                             ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
-                        timerList.Remove(id)|>ignore
-                        t.Dispose()
+                        if timerList.ContainsKey(id) then 
+                            timerList.Remove(id)|>ignore
+                            t.Dispose()
                     )
                     t.Start()
                 id
@@ -348,17 +350,18 @@ module NativeFunc=
                 if o|>isNull|>not then
                     let t=new System.Timers.Timer(float ms,AutoReset=true)
                     timerList.Add(id,t)
-                    t.Elapsed.AddHandler(fun _ _->
-                        try
-                            if o.IsString() then
-                                engine.Execute(o.ToString())|>ignore
-                            else
-                                o.Invoke()|>ignore
-                        with ex->
-                            ($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
-                        timerList.Remove(id)|>ignore
-                        t.Dispose()
-                    )
+                    if o.IsString() then
+                        t.Elapsed.AddHandler(fun _ _->
+                            try engine.Execute(o.ToString())|>ignore
+                            with ex->
+                                ($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                        )
+                    else
+                        t.Elapsed.AddHandler(fun _ _->
+                            try o.Invoke()|>ignore
+                            with ex->
+                                ($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                        )
                     t.Start()
                 id
             let clearInterval_fun(key:int)=
@@ -439,7 +442,7 @@ module NativeFunc=
             let removeBeforeActListener_fun(k:JsValue)(f:JsValue):JsValue=
                 let mutable result=JsValue.Undefined
                 try
-                    if f.IsNull() then 
+                    if f|>isNull then 
                         if k.IsNumber() then
                             let fid=Jint.Runtime.TypeConverter.ToInt32(k)
                             let index=_BeforeActListeners.FindIndex(fun (hash,_,_,_)->hash=fid)
@@ -487,7 +490,7 @@ module NativeFunc=
             let removeAfterActListener_fun(k:JsValue)(f:JsValue):JsValue=
                 let mutable result=JsValue.Undefined
                 try
-                    if f.IsNull() then 
+                    if f|>isNull then 
                         if k.IsNumber() then
                             let fid=Jint.Runtime.TypeConverter.ToInt32(k)
                             let index=_AfterActListeners.FindIndex(fun (hash,_,_,_)->hash=fid)

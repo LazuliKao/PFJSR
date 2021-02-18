@@ -12,7 +12,7 @@
 
 ---
 ### 相比[NetJSR](https://github.com/zhkj-liuxiaohua/BDSJSR2)变更或新增的方法：
-- #### [变更] `add*ActListener`的返回值：(返回已添加的回调ID，用于`remove*ActListener`)
+- #### [变更] `add*ActListener`的返回值：(返回已添加的回调ID，可用于`remove*ActListener`)
      >```js
      >let id = add*ActListener("onLoadName",e => {});
      >```
@@ -34,7 +34,7 @@
      >
      >//示例功能：通过非匿名函数移除一个"onLoadName"监听
      >//参数个数：2个
-     >//参数类型：字符串
+     >//参数类型：字符串;方法
      >//参数释义：key - 注册用关键字;fun - 监听器的非匿名函数
      >//返回值：移除的监听数量
      >//备注：不兼容最新netjsr,兼容旧的NetJSR或原JSR
