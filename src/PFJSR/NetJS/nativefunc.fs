@@ -320,21 +320,23 @@ module NativeFunc=
             let _AfterActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab*JsValue)>()
             let setTimeout_fun(o:JsValue)(ms:int):int= 
                 let id=NextID()
-                Console.WriteLine(id.ToString())
                 if o|>isNull|>not then
                     let t=new System.Timers.Timer(float ms,AutoReset=false)
                     timerList.Add(id,t)
+                    //let c=SynchronizationContext.Current
+                    //c.Post(SendOrPostCallback(fun _->Console.WriteLine(Thread.CurrentThread.ManagedThreadId)),null)
+                    //SynchronizationContext.Current 为获取当前线程的同步上下文，拿到线程的上下文之后可以通过调用Send（同步）和Post （异步）将消息分派到同步上下文，以此实现在指定线程执行！！！
                     t.Elapsed.AddHandler(fun _ _->
-                        try
-                            if o.IsString() then
-                                engine.Execute(o.ToString())|>ignore
-                            else
-                                o.Invoke()|>ignore
-                        with ex->
-                            ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
-                        if timerList.ContainsKey(id) then 
-                            timerList.Remove(id)|>ignore
-                            t.Dispose()
+                        //c.Post(SendOrPostCallback(fun _->
+                            try
+                                if o.IsString() then engine.Execute(o.ToString())|>ignore
+                                else o.Invoke()|>ignore
+                            with ex->
+                                ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
+                            if timerList.ContainsKey(id) then
+                                timerList.Remove(id)|>ignore
+                                t.Dispose()
+                        //),null)
                     )
                     t.Start()
                 id
