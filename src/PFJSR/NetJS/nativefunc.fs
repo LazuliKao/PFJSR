@@ -334,8 +334,8 @@ module NativeFunc=
                             with ex->
                                 ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
                             if timerList.ContainsKey(id) then
-                                timerList.Remove(id)|>ignore
                                 t.Dispose()
+                                timerList.Remove(id)|>ignore
                         //),null)
                     )
                     t.Start()
@@ -355,14 +355,12 @@ module NativeFunc=
                     if o.IsString() then
                         t.Elapsed.AddHandler(fun _ _->
                             try engine.Execute(o.ToString())|>ignore
-                            with ex->
-                                ($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                            with ex->($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
                         )
                     else
                         t.Elapsed.AddHandler(fun _ _->
                             try o.Invoke()|>ignore
-                            with ex->
-                                ($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                            with ex->($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
                         )
                     t.Start()
                 id
@@ -409,9 +407,10 @@ module NativeFunc=
                             //(engine,e|>BaseEvent.getFrom|>SerializeObject)|>JsValue.FromObject|>f.Invoke|>false.Equals|>not
                             let result=f.Invoke(new JsString(e|>BaseEvent.getFrom|>SerializeObject))
                             //false|>result.Equals|>not
-                            if result.Type=Jint.Runtime.Types.Boolean then
-                                Jint.Runtime.TypeConverter.ToBoolean(result) 
-                            else true
+                            if isNull(result) then true else
+                                if result.Type=Jint.Runtime.Types.Boolean then
+                                    Jint.Runtime.TypeConverter.ToBoolean(result) 
+                                else true
                             //let got=e|>BaseEvent.getFrom
                             //let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
                             //e.Add("result",new JValue( got.RESULT):>JToken)
@@ -433,9 +432,10 @@ module NativeFunc=
                             let e=got|>Newtonsoft.Json.Linq.JObject.FromObject
                             e.Add("result",new JValue(got.RESULT):>JToken)
                             let result=f.Invoke(new JsString(e.ToString Newtonsoft.Json.Formatting.None))
-                            if result.Type=Jint.Runtime.Types.Boolean then
-                                Jint.Runtime.TypeConverter.ToBoolean(result) 
-                            else true
+                            if isNull(result) then true else
+                                if result.Type=Jint.Runtime.Types.Boolean then
+                                    Jint.Runtime.TypeConverter.ToBoolean(result) 
+                                else true
                         with ex->
                             try
                             ("在脚本\""+scriptName+"\"执行\""+(int basee.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
@@ -584,9 +584,10 @@ module NativeFunc=
                 AssertCommercial()
                 (jdata,did,jsonposa,rot,exent,exblk)|>api.setStructure
             let setServerMotd_fun(motd)(isShow:JsValue)=
-                let s = if isShow.Type=Jint.Runtime.Types.Boolean then
-                                Jint.Runtime.TypeConverter.ToBoolean(isShow) 
-                           else true
+                let s = if isNull(isShow) then true else 
+                                if isShow.Type=Jint.Runtime.Types.Boolean then
+                                    Jint.Runtime.TypeConverter.ToBoolean(isShow) 
+                                else true
                 (motd, s)|>api.setServerMotd
             let JSErunScript_fun(js)(cb:Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
