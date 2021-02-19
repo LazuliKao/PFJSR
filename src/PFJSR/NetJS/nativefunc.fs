@@ -243,7 +243,7 @@ module NativeFunc=
         type getOnLinePlayers_delegate = delegate of unit -> string
         type getStructure_delegate = delegate of int*string*string*bool*bool -> string
         type setStructure_delegate = delegate of string*int*string*byte*bool*bool -> bool
-        type setServerMotd_delegate = delegate of string*bool -> bool
+        type setServerMotd_delegate = delegate of string*JsValue -> bool
         type JSErunScript_delegate = delegate of string*Action<bool> -> unit
         type JSEfireCustomEvent_delegate = delegate of string*string*Action<bool> -> unit
         type reNameByUuid_delegate = delegate of string*string -> bool
@@ -408,7 +408,10 @@ module NativeFunc=
                         try
                             //(engine,e|>BaseEvent.getFrom|>SerializeObject)|>JsValue.FromObject|>f.Invoke|>false.Equals|>not
                             let result=f.Invoke(new JsString(e|>BaseEvent.getFrom|>SerializeObject))
-                            false|>result.Equals|>not
+                            //false|>result.Equals|>not
+                            if result.Type=Jint.Runtime.Types.Boolean then
+                                Jint.Runtime.TypeConverter.ToBoolean(result) 
+                            else true
                             //let got=e|>BaseEvent.getFrom
                             //let e= (got|>Newtonsoft.Json.Linq.JObject.FromObject)
                             //e.Add("result",new JValue( got.RESULT):>JToken)
@@ -429,7 +432,10 @@ module NativeFunc=
                             let got=basee|>BaseEvent.getFrom
                             let e=got|>Newtonsoft.Json.Linq.JObject.FromObject
                             e.Add("result",new JValue(got.RESULT):>JToken)
-                            false|>f.Invoke(new JsString(e.ToString Newtonsoft.Json.Formatting.None)).Equals|>not
+                            let result=f.Invoke(new JsString(e.ToString Newtonsoft.Json.Formatting.None))
+                            if result.Type=Jint.Runtime.Types.Boolean then
+                                Jint.Runtime.TypeConverter.ToBoolean(result) 
+                            else true
                         with ex->
                             try
                             ("在脚本\""+scriptName+"\"执行\""+(int basee.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
@@ -577,7 +583,11 @@ module NativeFunc=
             let setStructure_fun(jdata)(did)(jsonposa)(rot)(exent)(exblk)=
                 AssertCommercial()
                 (jdata,did,jsonposa,rot,exent,exblk)|>api.setStructure
-            let setServerMotd_fun(motd)(isShow)=(motd, isShow)|>api.setServerMotd
+            let setServerMotd_fun(motd)(isShow:JsValue)=
+                let s = if isShow.Type=Jint.Runtime.Types.Boolean then
+                                Jint.Runtime.TypeConverter.ToBoolean(isShow) 
+                           else true
+                (motd, s)|>api.setServerMotd
             let JSErunScript_fun(js)(cb:Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
                     try

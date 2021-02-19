@@ -4,16 +4,16 @@ open Newtonsoft.Json
 open System.IO
 module Data=
     type ConfigVanillaScriptsModel() =
-        let mutable _Enable : bool  = false
-        let mutable _Path : string  = "scripts"
+        let mutable _Enable : bool = false
+        let mutable _Path : string = "scripts"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
         member _this.Path with get() =_Path and set value  =_Path<-value
     type ConfigJSRModel() = 
-        let mutable _Enable : bool  = true
-        let mutable _Path : string  = "PFJS"
-        let mutable _CheckUUID : bool  = true
-        let mutable _HotReloadEnabled : bool  = true
-        let mutable _HotReloadCommand : string  = "pfjsr reload"
+        let mutable _Enable : bool = true
+        let mutable _Path : string = "PFJS"
+        let mutable _CheckUUID : bool = true
+        let mutable _HotReloadEnabled : bool = true
+        let mutable _HotReloadCommand : string = "pfjsr reload"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
         member _this.Path with get() =_Path and set value  =_Path<-value
         member _this.CheckUuid with get() =_CheckUUID and set value  =_CheckUUID<-value
