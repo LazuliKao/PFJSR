@@ -26,10 +26,14 @@ module NativeFunc=
         type getShareData_delegate = delegate of string -> JsValue
         type removeShareData_delegate = delegate of string -> JsValue
         type getWorkingPath_delegate = delegate of unit-> string
-        type startLocalHttpListen_delegate = delegate of int*Func<bool,string,string>->int
+        type startLocalHttpListen_delegate = delegate of int*Func<string,string>->int
         type stopLocalHttpListen_delegate = delegate of int ->bool
-        type resetLocalHttpListener_delegate = delegate of int*Func<bool,string,string>->bool
+        type resetLocalHttpListener_delegate = delegate of int*Func<string,string>->bool
         let shares=new Collections.Generic.Dictionary<string,JsValue>()
+        // 本地侦听器
+        let httplis=new System.Collections.Generic.Dictionary<int,HttpListener>()
+        // 侦听函数
+        let httpfuncs:Hashtable = new Hashtable();
         type Model()=
             let mkdir_fun=
                mkdir_delegate(fun dirname ->
@@ -92,10 +96,6 @@ module NativeFunc=
                 getWorkingPath_delegate(fun _ ->
                         AppDomain.CurrentDomain.BaseDirectory
                     )
-            // 本地侦听器
-            let httplis:Hashtable = new Hashtable();
-            // 侦听函数
-            let httpfuncs:Hashtable = new Hashtable();
             let readStream(s:Stream,c:Encoding):string=
                 try
                     let byteList= new System.Collections.Generic.List<byte>()
@@ -110,15 +110,20 @@ module NativeFunc=
                 with ex-> 
                     Console.WriteLineErr("readStream",ex)
                     String.Empty
-            let readQueryString(q:System.Collections.Specialized.NameValueCollection):JObject=
+            let readQueryString(q:System.Collections.Specialized.NameValueCollection,url:string):JArray=
                 if q|>isNull|>not then
-                    let ol=new JObject()
+                    let ol=new JArray()
                     if q.Count > 0 then
-                        for k:string in q.Keys do
-                            ol.Add(new JProperty(k, q.[k]))//new KeyValuePair<string, object>(k, q[k]))
+                        let d = System.Web.HttpUtility.ParseQueryString(url.Substring(url.IndexOf('?')));
+                        if d|>isNull|>not && d.Count > 0 then
+                            for k:string in d.Keys do
+                                ol.Add(new JObject[|
+                                new JProperty("Key",k)
+                                new JProperty("Value", d.[k])
+                                |])//new KeyValuePair<string, object>(k, q[k]))
                     ol
                 else null
-            let makeReqCallback(f:Func<bool,string,string>):AsyncCallback=
+            let makeReqCallback(f:Func<string,string>):AsyncCallback=
                 let cb:AsyncCallback=new AsyncCallback(fun x->
                     let listener:HttpListener=x.AsyncState:?>HttpListener
                     try
@@ -128,9 +133,9 @@ module NativeFunc=
                             let req = context.Request
                             let resp = context.Response
                             try
-                                let ret =f.Invoke(false,Newtonsoft.Json.JsonConvert.SerializeObject(new JObject[|
+                                let ret=f.Invoke(Newtonsoft.Json.JsonConvert.SerializeObject(new JObject[|
                                     new JProperty("AcceptTypes",req.AcceptTypes)
-                                    new JProperty("ContentEncoding",req.ContentEncoding.ToString())
+                                    new JProperty("ContentEncoding",JObject.FromObject(req.ContentEncoding))
                                     new JProperty("ContentLength64",req.ContentLength64)
                                     new JProperty("ContentType",req.ContentType)
                                     new JProperty("Cookies",req.Cookies)
@@ -148,23 +153,23 @@ module NativeFunc=
                                         new JProperty("AddressFamily",req.LocalEndPoint.AddressFamily)
                                         new JProperty("Port",req.LocalEndPoint.Port)
                                         |])
-                                    new JProperty("QueryString",readQueryString(req.QueryString))
+                                    new JProperty("ProtocolVersion",JObject.FromObject(req.ProtocolVersion))
+                                    new JProperty("QueryString",readQueryString(req.QueryString,req.RawUrl))
                                     new JProperty("RawUrl",req.RawUrl)
                                     new JProperty("RemoteEndPoint",new JObject[|
                                         new JProperty("Address",req.RemoteEndPoint.Address.ToString())
                                         new JProperty("AddressFamily",req.RemoteEndPoint.AddressFamily)
                                         new JProperty("Port",req.RemoteEndPoint.Port)
                                         |])
-                                    new JProperty("RequestTraceIdentifier",req.RequestTraceIdentifier)
+                                    new JProperty("RequestTraceIdentifier",req.RequestTraceIdentifier.ToString())
                                     new JProperty("ServiceName",req.ServiceName)
-                                    new JProperty("TransportContext",req.TransportContext)
+                                    new JProperty("TransportContext",JObject.FromObject(req.TransportContext))
                                     new JProperty("Url",req.Url)
                                     new JProperty("UrlReferrer",req.UrlReferrer)
                                     new JProperty("UserAgent",req.UserAgent)
                                     new JProperty("UserHostAddress",req.UserHostAddress)
                                     new JProperty("UserHostName",req.UserHostName)
                                     new JProperty("UserLanguages",req.UserLanguages)
-                                    new JProperty("ProtocolVersion",req.ProtocolVersion)
                                     |]))
                                 if ret|>isNull|>not then
                                     resp.ContentType <- "text/plain;charset<-UTF-8"//告诉客户端返回的ContentType类型为纯文本格式，编码为UTF-8
@@ -206,31 +211,35 @@ module NativeFunc=
                         httpfuncs.[h] <- cb
                         h.BeginGetContext(cb, h)|>ignore
                         hid<-((new Random()).Next())
-                        httplis.[hid] <- h
+                        httplis.Add(hid,h)
                     with 
                         | :? HttpListenerException -> ()
                         | ex-> ("err",ex)|>Console.WriteLineErr 
                     hid
             )
             let stopLocalHttpListen_fun=stopLocalHttpListen_delegate(fun i->
-                let h = httplis.[i] :?> HttpListener
-                if h|>isNull|>not then
-                    try
-                        httpfuncs.Remove(h)
-                        httplis.Remove(i)
-                        h.Stop()
-                        true
-                    with _->false
+                if httplis.ContainsKey(i) then
+                    let h = httplis.[i]
+                    if h|>isNull|>not then
+                        try
+                            httpfuncs.Remove(h)
+                            let r=httplis.Remove(i)
+                            h.Stop()
+                            r
+                        with _->false
+                    else false
                 else false
             )
             let resetLocalHttpListener_fun=resetLocalHttpListener_delegate(fun i f->
-                let h = httplis.[i] :?> HttpListener;
-                if h|>isNull|>not then
-                    try
-                        let cb:AsyncCallback = makeReqCallback(f);
-                        httpfuncs.[h] <- cb;
-                        true
-                    with _->false
+                if httplis.ContainsKey(i) then
+                    let h = httplis.[i]
+                    if h|>isNull|>not then
+                        try
+                            let cb:AsyncCallback = makeReqCallback(f);
+                            httpfuncs.[h] <- cb;
+                            true
+                        with _->false
+                    else false
                 else false
             )
             member _this.mkdir=mkdir_fun
@@ -396,7 +405,7 @@ module NativeFunc=
                     with ex->
                         ($"在脚本\"{scriptName}\"执行\"runScript时遇到错误：",ex)|>Console.WriteLineErr
             let request_fun(u)(m)(p)(f:Action<obj>)=
-                Task.Run(fun ()-> 
+                Task.Run(fun ()->
                         try
                             let mutable ret:string = null;
                             try
@@ -833,3 +842,10 @@ module NativeFunc=
             try t.Dispose() with _->()
         Core.timerList.Clear()
         try Basic.shares.Clear() with ex->("重置ShareData出错",ex)|>Console.WriteLineErr
+        for h in Basic.httplis do
+            try 
+                h.Value.Stop()
+                Basic.httpfuncs.Remove(h)
+            with ex->("http侦听器终止出错",ex)|>Console.WriteLineErr
+        try Basic.httplis.Clear() with ex->("重置http侦听器出错",ex)|>Console.WriteLineErr
+        try Basic.httpfuncs.Clear() with ex->("重置http回调出错",ex)|>Console.WriteLineErr

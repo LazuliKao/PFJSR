@@ -12,7 +12,7 @@ module Extensions=
         let req = System.Net.WebRequest.Create(url)
         req.Method <- mode
         if mode = "POST"then
-            req.ContentType <- "application/x-www-form-urlencoded";
+            req.ContentType<-"application/x-www-form-urlencoded;charset=UTF-8"
             if p|>String.IsNullOrEmpty|>not then
                 let payload:byte[]=Encoding.UTF8.GetBytes(p)
                 req.ContentLength<-int64 payload.Length
