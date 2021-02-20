@@ -96,6 +96,28 @@ module NativeFunc=
             let httplis:Hashtable = new Hashtable();
             // 侦听函数
             let httpfuncs:Hashtable = new Hashtable();
+            let readStream(s:Stream,c:Encoding):string=
+                try
+                    let byteList= new System.Collections.Generic.List<byte>()
+                    let byteArr:System.Byte[] =Array.zeroCreate 2048  //[| for _ in 0 .. 2048 -> byte 0 |]
+                    let mutable readLen:int = 0
+                    let mutable len:int = 0
+                    while readLen <> 0 do
+                        readLen <- s.Read(byteArr, 0, byteArr.Length)
+                        len<-len+readLen
+                        byteList.AddRange(byteArr)
+                    c.GetString(byteList.ToArray(), 0, len)
+                with ex-> 
+                    Console.WriteLineErr("readStream",ex)
+                    String.Empty
+            let readQueryString(q:System.Collections.Specialized.NameValueCollection):JObject=
+                if q|>isNull|>not then
+                    let ol=new JObject()
+                    if q.Count > 0 then
+                        for k:string in q.Keys do
+                            ol.Add(new JProperty(k, q.[k]))//new KeyValuePair<string, object>(k, q[k]))
+                    ol
+                else null
             let makeReqCallback(f:Func<bool,string,string>):AsyncCallback=
                 let cb:AsyncCallback=new AsyncCallback(fun x->
                     let listener:HttpListener=x.AsyncState:?>HttpListener
@@ -106,51 +128,44 @@ module NativeFunc=
                             let req = context.Request
                             let resp = context.Response
                             try
-                                let ret =f.Invoke(false,Newtonsoft.Json.JsonConvert.SerializeObject(req)
-                                //(new JObject [|
-                                //    new JProperty("AcceptTypes",req.AcceptTypes)
-                                //    new JProperty("ContentEncoding",req.ContentEncoding)
-                                //    new JProperty("ContentLength64",req.ContentLength64)
-                                //    new JProperty("ContentType",req.ContentType)
-                                //    new JProperty("Cookies",req.Cookies)
-                                //    new JProperty("HasEntityBody",req.HasEntityBody)
-                                //    new JProperty("Headers",req.Headers)
-                                //    new JProperty("HttpMethod",req.HttpMethod)
-                                //    new JProperty("InputStream",readStream(req.InputStream, req.ContentEncoding))
-                                //    new JProperty("IsAuthenticated",req.IsAuthenticated)
-                                //    new JProperty("IsLocal",req.IsLocal)
-                                //    new JProperty("IsSecureConnection",req.IsSecureConnection)
-                                //    new JProperty("IsWebSocketRequest",req.IsWebSocketRequest)
-                                //    new JProperty("KeepAlive",req.KeepAlive)
-                                //    new JProperty("LocalEndPoint",new JObject[|
-                                //        new JProperty("Address",req.LocalEndPoint.Address.ToString())
-                                //        new JProperty("AddressFamily",req.LocalEndPoint.AddressFamily)
-                                //        new JProperty("Port",req.LocalEndPoint.Port)
-                                //    |]
-                                //(*
-                                //= req.,
-                                //QueryString = readQueryString(req.QueryString),
-                                //RawUrl = req.RawUrl,
-                                //RemoteEndPoint = new
-                                //{
-                                //    Address = req.RemoteEndPoint.Address.ToString(),
-                                //    AddressFamily = req.RemoteEndPoint.AddressFamily,
-                                //    Port = req.RemoteEndPoint.Port
-                                //},
-                                //RequestTraceIdentifier = req.RequestTraceIdentifier,
-                                //ServiceName = req.ServiceName,
-                                //TransportContext = req.TransportContext,
-                                //Url = req.Url,
-                                //UrlReferrer = req.UrlReferrer,
-                                //UserAgent = req.UserAgent,
-                                //UserHostAddress = req.UserHostAddress,
-                                //UserHostName = req.UserHostName,
-                                //UserLanguages = req.UserLanguages
-                                //*)
-                                //    new JProperty("ProtocolVersion",req.ProtocolVersion)
-                                //    )
-                                //|]).ToString()
-                                )
+                                let ret =f.Invoke(false,Newtonsoft.Json.JsonConvert.SerializeObject(new JObject[|
+                                    new JProperty("AcceptTypes",req.AcceptTypes)
+                                    new JProperty("ContentEncoding",req.ContentEncoding.ToString())
+                                    new JProperty("ContentLength64",req.ContentLength64)
+                                    new JProperty("ContentType",req.ContentType)
+                                    new JProperty("Cookies",req.Cookies)
+                                    new JProperty("HasEntityBody",req.HasEntityBody)
+                                    new JProperty("Headers",req.Headers)
+                                    new JProperty("HttpMethod",req.HttpMethod)
+                                    new JProperty("InputStream",readStream(req.InputStream, req.ContentEncoding))
+                                    new JProperty("IsAuthenticated",req.IsAuthenticated)
+                                    new JProperty("IsLocal",req.IsLocal)
+                                    new JProperty("IsSecureConnection",req.IsSecureConnection)
+                                    new JProperty("IsWebSocketRequest",req.IsWebSocketRequest)
+                                    new JProperty("KeepAlive",req.KeepAlive)
+                                    new JProperty("LocalEndPoint",new JObject[|
+                                        new JProperty("Address",req.LocalEndPoint.Address.ToString())
+                                        new JProperty("AddressFamily",req.LocalEndPoint.AddressFamily)
+                                        new JProperty("Port",req.LocalEndPoint.Port)
+                                        |])
+                                    new JProperty("QueryString",readQueryString(req.QueryString))
+                                    new JProperty("RawUrl",req.RawUrl)
+                                    new JProperty("RemoteEndPoint",new JObject[|
+                                        new JProperty("Address",req.RemoteEndPoint.Address.ToString())
+                                        new JProperty("AddressFamily",req.RemoteEndPoint.AddressFamily)
+                                        new JProperty("Port",req.RemoteEndPoint.Port)
+                                        |])
+                                    new JProperty("RequestTraceIdentifier",req.RequestTraceIdentifier)
+                                    new JProperty("ServiceName",req.ServiceName)
+                                    new JProperty("TransportContext",req.TransportContext)
+                                    new JProperty("Url",req.Url)
+                                    new JProperty("UrlReferrer",req.UrlReferrer)
+                                    new JProperty("UserAgent",req.UserAgent)
+                                    new JProperty("UserHostAddress",req.UserHostAddress)
+                                    new JProperty("UserHostName",req.UserHostName)
+                                    new JProperty("UserLanguages",req.UserLanguages)
+                                    new JProperty("ProtocolVersion",req.ProtocolVersion)
+                                    |]))
                                 if ret|>isNull|>not then
                                     resp.ContentType <- "text/plain;charset<-UTF-8"//告诉客户端返回的ContentType类型为纯文本格式，编码为UTF-8
                                     resp.AddHeader("Access-Control-Allow-Origin", "*")

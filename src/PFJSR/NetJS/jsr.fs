@@ -19,6 +19,4 @@ module JSR=
                   item.GetValue(core))|>eng.SetValue|>ignore
         //for item in core.GetType().GetMethods() do
         //     Console.WriteLine(item.Name)
-
-
         js|>eng.Execute
