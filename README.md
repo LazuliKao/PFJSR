@@ -11,7 +11,9 @@
 
 
 ---
-### 相比[NetJSR](https://github.com/zhkj-liuxiaohua/BDSJSR2)变更或新增的方法：
+<details>
+<summary><b>相比<a href="https://github.com/zhkj-liuxiaohua/BDSJSR2">NetJSR</a>变更或新增的方法：<b></summary>
+
 - #### [变更] `add*ActListener`的返回值：(返回已添加的回调ID，可用于`remove*ActListener`)
      >```js
      >let id = add*ActListener("onLoadName",e => {});
@@ -82,5 +84,45 @@
      >//清除一个计时器
      >clearInterval(id);
      >```
+</details>
+<details>
+<summary><b>更多增加功能<b></summary>
 
+ - #### 导入`.Net Framework`命名空间
+     - 示例
+       >```js
+       >const Console = importNamespace("System").Console;
+       >Console.Clear();
+       >Console.WriteLine("已清屏");
+       >```
+ - #### 导入其他CSR目录下的程序集的命名空间
+     - 比如csr目录下有个PFEssentials.csr.dll，那么可以通过如下的方式调用程序集内部的方法
+       >```js
+       >const PFConsole = importNamespace("PFEssentials").Console//导入PFEssentials命名空间的静态类Console
+       >PFConsole.SharedWriteLine("测试插件", "输出内容")//调用SharedWriteLine方法
+       >const pfessApi = importNamespace("PFEssentials.PublicApi").V2;
+       >//导入"PFEssentials"的命名空间("PublicApi"是静态类名，当命名空间导入),V2是类名
+       >//其他程序集如何导入需要具体分析
+       >addAfterActListener("onInputCommand", function (_e) {
+       >    const e = JSON.parse(_e);
+       >    if (e.cmd.toLowerCase().trim() === "/querymoney") {//匹配命令
+       >        const money = pfessApi.GetMoney(e.playername);//调用已经导入的类的静态方法来获取money
+       >        pfessApi.FeedbackTellraw(e.playername, "你的Money:" + money);
+       >    }
+       >  /*参考(具体方法可以通过反编译程序集来查看)
+       >  pfessApi.AddMoney
+       >  pfessApi.RemoveMoney
+       >  pfessApi.GetMoney
+       >  pfessApi.GetUUID
+       >  pfessApi.HasOpPermission
+       >  pfessApi.FeedbackTellraw
+       >  pfessApi.SendActionbar
+       >  pfessApi.AddCommandDescribe
+       >  pfessApi.DelCommandDescribe
+       >  pfessApi.ExecuteCmd
+       >  pfessApi.ExecuteCmdAs"
+       >  */
+       >});
+       >```
 
+</details>
