@@ -26,7 +26,7 @@ module Data=
         member _this.VanillaScripts with get() =_VanillaScripts and set value  =_VanillaScripts<-value
         //member val JSR = new ConfigJSRModel() with get, set
         //member val VanillaScripts = new ConfigVanillaScriptsModel() with get, set
-
+        member val LoadCSRAssembly=true with get, set
     let mutable private _config: ConfigModel = new ConfigModel()
     let mutable private _hasLoaded: bool = false
     let public Config:ConfigModel = 

@@ -18,6 +18,11 @@ module Loader=
             //options.AllowClr(typeof<Colorful.Console>.Assembly)|>ignore
             options.AllowClr(typeof<Jint.Engine>.Assembly)|>ignore
             options.AllowClr(typeof<Newtonsoft.Json.JsonConvert>.Assembly)|>ignore
+            for x in API.csrAssemblyList do
+                options.AllowClr(x)|>ignore
+                //#if DEBUG
+                //Console.WriteLine("加入程序集"+x.FullName)
+                //#endif
             let engine=new Jint.Engine(options)
             (
                 engine,

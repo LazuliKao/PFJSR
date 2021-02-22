@@ -22,9 +22,29 @@ module PluginMain=
                  //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
                  if file.ToLower().EndsWith(".js") then 
                     file|>Loader.LoadVanillaScript
+    let LoadcsrAssembly()=
+        API.csrAssemblyList <- List.choose 
+            ( fun x -> match x with
+                            | null -> None
+                            | _ -> Some(x)
+            )
+            ( 
+                List.map (fun x ->
+                    try
+                        System.Reflection.Assembly.LoadFile(x)
+                    with ex->
+                        Console.WriteLineErr($"加载外部程序集\".\\csr\\{Path.GetFileName(x)}\"出错",ex)
+                        null
+                ) [for x in "csr"|>Path.GetFullPath|>Directory.GetFiles do if x.EndsWith(".dll") then x]
+            )
+        (String.concat "|" 
+            ($"已将 {API.csrAssemblyList.Length} 个来自CSR插件目录的程序集加载到脚本引擎"
+            ::[for x in API.csrAssemblyList->x.GetName().Name])
+        )|>Console.WriteLine 
     let Init(_api:MCCSAPI) =
         API.api <- _api
         Console.Setup()
+        LoadcsrAssembly()
         LoadJSRScripts()
         LoadVanillaScripts()
         if Data.Config.JSR.HotReloadEnabled then
