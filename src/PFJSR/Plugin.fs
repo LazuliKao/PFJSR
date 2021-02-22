@@ -9,19 +9,22 @@ module PluginMain=
             if DirPath|>Directory.Exists|>not then
                 DirPath|>Directory.CreateDirectory|>ignore
                 "创建JSR插件目录:"+Data.Config.JSR.Path|>Console.WriteLine
-            for file in (DirPath|>Directory.GetFiles) do
-                 //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
-                 if file.ToLower().EndsWith(".js") then file|>Loader.LoadJSRScript
+            for file in (Seq.choose (fun x->
+                match x:string with
+                | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
+                | _->None
+                ) (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
     let LoadVanillaScripts()=
         if Data.Config.VanillaScripts.Enable then
             let DirPath:string=Data.Config.VanillaScripts.Path|>Path.GetFullPath
             if DirPath|>Directory.Exists|>not then
                 DirPath|>Directory.CreateDirectory|>ignore
                 "创建NativeScripts目录:"+Data.Config.VanillaScripts.Path|>Console.WriteLine
-            for file in (DirPath|>Directory.GetFiles) do
-                 //if file.ToLower().EndsWith(".js") then file|>ScriptFiles.Add
-                 if file.ToLower().EndsWith(".js") then 
-                    file|>Loader.LoadVanillaScript
+            for file in (Seq.choose (fun x->
+                match x:string with
+                | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
+                | _->None
+                ) (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
     let LoadcsrAssembly()=
         API.csrAssemblyList <- List.choose 
             ( fun x -> match x with
