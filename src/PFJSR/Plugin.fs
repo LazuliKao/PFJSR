@@ -36,7 +36,7 @@ module PluginMain=
                     try
                         System.Reflection.Assembly.LoadFile(x)
                     with ex->
-                        Console.WriteLineErr($"加载外部程序集\".\\csr\\{Path.GetFileName(x)}\"出错",ex)
+                        //Console.WriteLineErr($"加载外部程序集\".\\csr\\{Path.GetFileName(x)}\"出错",ex)
                         null
                 ) [for x in "csr"|>Path.GetFullPath|>Directory.GetFiles do if x.EndsWith(".dll") then x]
             )
