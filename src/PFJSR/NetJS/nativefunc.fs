@@ -21,6 +21,11 @@ module NativeFunc=
         type fileReadAllText_delegate = delegate of string -> string
         type fileWriteAllText_delegate = delegate of string*string -> bool
         type fileWriteLine_delegate = delegate of string*string-> bool
+        type fileExists_delegate = delegate of string->bool
+        type fileDelete_delegate = delegate of string->bool
+        type fileCopy_delegate = delegate of string*string*bool->bool
+        type fileMove_delegate = delegate of string*string->bool
+        type dirExists_delegate = delegate of string->bool
         type TimeNow_delegate = delegate of unit -> string
         type setShareData_delegate = delegate of string*JsValue-> unit
         type getShareData_delegate = delegate of string -> JsValue
@@ -71,6 +76,31 @@ module NativeFunc=
                         true
                     with _ -> false
                     )
+            let fileExists_fun=
+                fileExists_delegate(fun f->f|>File.Exists)
+            let fileDelete_fun=
+                fileDelete_delegate(fun f->
+                    try
+                        f|>File.Delete
+                        true
+                    with _->false
+                )
+            let fileCopy_fun=
+                fileCopy_delegate(fun f t o->
+                    try
+                        File.Copy(f,t,o)
+                        true
+                    with _->false
+                )
+            let fileMove_fun=
+                fileMove_delegate(fun f t->
+                    try
+                        File.Move(f,t)
+                        true
+                    with _->false
+                )
+            let dirExists_fun=
+                dirExists_delegate(fun d->d|>Directory.Exists)
             let TimeNow_fun=
                 TimeNow_delegate(fun _ ->
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -255,6 +285,11 @@ module NativeFunc=
             member _this.startLocalHttpListen=startLocalHttpListen_fun
             member _this.stopLocalHttpListen=stopLocalHttpListen_fun
             member _this.resetLocalHttpListener=resetLocalHttpListener_fun
+            member _this.fileExists=fileExists_fun
+            member _this.fileDelete=fileDelete_fun
+            member _this.fileCopy=fileCopy_fun
+            member _this.fileMove=fileMove_fun
+            member _this.dirExists=dirExists_fun
         let Instance=new Model()
     module Core=
         type getXXActListener_delegate = delegate of JsValue -> unit
