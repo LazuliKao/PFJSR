@@ -60,7 +60,10 @@ module Console=
     let WriteLineWarn(content:obj,tip:string)=
         Log.Warning("[{0}]"+content.ToString()+" --> "+tip.ToString(), PluginName)
     let WriteLineErr(content:obj,ex:exn)=
-        Log.Error(ex,"[{0}]"+content.ToString(), PluginName)
+        if typeof<API.PFJsrException> = ex.GetType() then
+            Log.Error("[{0}]"+content.ToString()+"\n"+ex.Message, PluginName)
+        else
+            Log.Error(ex,"[{0}]"+content.ToString(), PluginName)
         //Colorful.Console.WriteLineFormatted("{0}{2} {3}{1}{4}\n\t{5}\n{6}\t", Console.ForegroundColor,
         //   new Formatter("[", Color.LightGoldenrodYellow),
         //   new Formatter("]", Color.LightGoldenrodYellow),

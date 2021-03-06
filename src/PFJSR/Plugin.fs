@@ -13,7 +13,8 @@ module PluginMain=
                 match x:string with
                 | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
                 | _->None
-                ) (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
+                ) 
+                        (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
     let LoadVanillaScripts()=
         if Data.Config.VanillaScripts.Enable then
             let DirPath:string=Data.Config.VanillaScripts.Path|>Path.GetFullPath
@@ -24,7 +25,8 @@ module PluginMain=
                 match x:string with
                 | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
                 | _->None
-                ) (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
+                )    
+                        (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
     let LoadcsrAssembly()=
         API.csrAssemblyList <- List.choose 
             ( fun x -> match x with
@@ -47,7 +49,7 @@ module PluginMain=
     let Init(_api:MCCSAPI) =
         API.api <- _api
         Console.Setup()
-        LoadcsrAssembly()
+        if Data.Config.LoadCSRAssembly then LoadcsrAssembly()
         LoadJSRScripts()
         LoadVanillaScripts()
         if Data.Config.JSR.HotReloadEnabled then

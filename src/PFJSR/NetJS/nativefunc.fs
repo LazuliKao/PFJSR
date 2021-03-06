@@ -325,20 +325,19 @@ module NativeFunc=
                 if String.IsNullOrWhiteSpace(uuid) then
                     let funcname = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                     let err = $"在脚本\"{scriptName}\"调用\"{funcname.Remove(funcname.Length-4)}\"方法时使用了空的uuid！"
-                    err|>failwith
+                    raise (PFJsrException(err))
                 if Data.Config.JSR.CheckUuid then
                     if (uuid,"^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$")|>Text.RegularExpressions.Regex.IsMatch|>not then
                         let funcname = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                         let err = $"在脚本\"{scriptName}\"调用\"{funcname.Remove(funcname.Length-4)}\"方法时使用了无效的uuid:\"{uuid}\"！"
-                        err|>failwith
+                        raise (PFJsrException(err))
             let AssertCommercial()=
                 if not api.COMMERCIAL then
                     let fn = (new Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name
                     for item in (new Diagnostics.StackTrace()).GetFrames() do
                         item.ToString()|>Console.WriteLine
                     let err = $"获取方法\"{fn.Remove(fn.Length-4)}\"失败，社区版不支持该方法！"
-                    err|>Console.WriteLine
-                    err|>failwith 
+                    raise (PFJsrException(err))
             let mutable ActCid:int=Int32.MinValue
             let NextActID():int=ActCid<-Interlocked.Increment(ref ActCid);ActCid
             let _BeforeActListeners =new Collections.Generic.List<(int*string*MCCSAPI.EventCab*JsValue)>()
