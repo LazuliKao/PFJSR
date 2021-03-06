@@ -48,7 +48,6 @@ module PluginMain=
         )|>Console.WriteLine 
     let Init(_api:MCCSAPI) =
         API.api <- _api
-        Console.Setup()
         if Data.Config.LoadCSRAssembly then LoadcsrAssembly()
         LoadJSRScripts()
         LoadVanillaScripts()
