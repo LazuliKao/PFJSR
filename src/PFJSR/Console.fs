@@ -25,20 +25,65 @@ module Console=
             PluginName
             (content.ToString())
             (tip.ToString())
-    let WriteLineErr(content:obj,ex:exn)=
-        match ex with
-            | :? API.PFJsrException -> WriteLineWarn(content,ex.Message)
-            | :? Jint.Runtime.JavaScriptException as jex -> 
-                printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;175;238;238m\tJavaScriptException >>>\n\t信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\x1b[0m"
-                        PluginName
-                        (content.ToString())
-                        (jex.Message)
-                        (jex.LineNumber)
-                        (jex.Column)
-            | _ -> printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;147;147;119m%s\x1b[0m"
-                        PluginName
-                        (content.ToString())
-                        (ex.ToString())
-
     let log(content:string)=
         printfn "%s" content
+    let WriteLineErr(content:obj,ex:exn)=
+        printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;147;147;119m%s\x1b[0m"
+            PluginName
+            (content.ToString())
+            (ex.ToString())
+    let WriteLineErrEx(content:obj)(ex:exn)(name:string)=
+        match ex with
+            | :? API.PFJsrException -> WriteLineWarn(content,ex.Message)
+            | :? Esprima.ParserException as jex-> 
+                try
+                    let a=List.tryFind (fun x->(x:>API.ScriptItemModel).Type=API.ScriptType.JSR && (x:>API.ScriptItemModel).Name=name) API.LoadedScripts
+                    let mutable Line=a.Value.Content.Split('\n').[jex.LineNumber-1]
+                    let c=jex.Column-1
+                    let endM=Text.RegularExpressions.Regex.Match(Line.[c+1..],@"[\p{P}\p{Z}]")
+                    if endM.Success then 
+                        let endIndex = c + endM.Index
+                        if c=0 then
+                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
+                        else
+                            Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
+                    else
+                        if c=0 then
+                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                        else
+                            Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..c]+"\x1b[0m\x1b[2m"+Line.[c+1..]
+                    printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;175;238;238m\t%s >>>\n\t信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                            PluginName
+                            (content.ToString())
+                            "Esprima.ParserException"
+                            (jex.Description)
+                            (jex.LineNumber)
+                            (c)
+                            (Line.Trim())
+                with _->WriteLineErr(content,ex)
+            | :? Jint.Runtime.JavaScriptException as jex -> 
+               try
+                    let a=List.tryFind (fun x->(x:>API.ScriptItemModel).Type=API.ScriptType.JSR && (x:>API.ScriptItemModel).Name=name) API.LoadedScripts
+                    let mutable Line=a.Value.Content.Split('\n').[jex.LineNumber-1]
+                    let endM=Text.RegularExpressions.Regex.Match(Line.[jex.Column+1..],@"[\p{P}\p{Z}]")
+                    if endM.Success then 
+                        let endIndex = jex.Column + endM.Index
+                        if jex.Column=0 then
+                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
+                        else
+                            Line<-Line.[..jex.Column-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[jex.Column..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
+                    else
+                        if jex.Column=0 then
+                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                        else
+                            Line<-Line.[..jex.Column-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[jex.Column..jex.Column]+"\x1b[0m\x1b[2m"+Line.[jex.Column+1..]
+                    printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;175;238;238m\t%s >>>\n\t信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                            PluginName
+                            (content.ToString())
+                            "Runtime.JavaScriptException"
+                            (jex.Message)
+                            (jex.LineNumber)
+                            (jex.Column)
+                            (Line.Trim())
+                with _->WriteLineErr(content,ex)
+            | _ -> WriteLineErr(content,ex)

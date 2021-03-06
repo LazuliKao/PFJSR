@@ -356,7 +356,9 @@ module NativeFunc=
                                 if o.IsString() then engine.Execute(o.ToString())|>ignore
                                 else o.Invoke()|>ignore
                             with ex->
-                                ($"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：",ex)|>Console.WriteLineErr
+                                Console.WriteLineErrEx
+                                    $"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：" 
+                                    ex scriptName
                             if timerList.ContainsKey(id) then
                                 t.Dispose()
                                 timerList.Remove(id)|>ignore
@@ -370,7 +372,10 @@ module NativeFunc=
                     try if t.Enabled then t.Stop() with _->()
                     try t.Dispose() with _->()
                     timerList.Remove(key)|>ignore
-                | _ -> ("在脚本\""+scriptName+"\"执行\"clearTimeout\"无效",new exn($"未找到id:{id}对应的Timer实例"))|>Console.WriteLineErr
+                | _ -> Console.WriteLineErr(
+                            $"在脚本\"{scriptName}\"执行\"clearTimeout\"无效",
+                            (exn($"未找到id:{id}对应的Timer实例"))
+                            )
             let setInterval_fun(o:JsValue)(ms:int)=
                 let id=NextID()
                 if o|>isNull|>not then
@@ -379,12 +384,16 @@ module NativeFunc=
                     if o.IsString() then
                         t.Elapsed.AddHandler(fun _ _->
                             try engine.Execute(o.ToString())|>ignore
-                            with ex->($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                            with ex->Console.WriteLineErrEx
+                                                $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
+                                                ex scriptName
                         )
                     else
                         t.Elapsed.AddHandler(fun _ _->
                             try o.Invoke()|>ignore
-                            with ex->($"在脚本\"{scriptName}\"执行\"setInterval时遇到错误：",ex)|>Console.WriteLineErr
+                            with ex->Console.WriteLineErrEx
+                                                $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
+                                                ex scriptName
                         )
                     t.Start()
                 id
@@ -394,7 +403,10 @@ module NativeFunc=
                     try if t.Enabled then t.Stop() with _->()
                     try t.Dispose() with _->()
                     timerList.Remove(key)|>ignore
-                | _ -> ("在脚本\""+scriptName+"\"执行\"clearInterval\"无效",new exn($"未找到id:{id}对应的Timer实例"))|>Console.WriteLineErr
+                | _ -> Console.WriteLineErr(
+                                $"在脚本\"{scriptName}\"执行\"clearInterval\"无效",
+                                (exn($"未找到id:{id}对应的Timer实例"))
+                                )
             let runScript_fun(o:JsValue)=
                 if not (o|>isNull) then
                     try
@@ -402,8 +414,9 @@ module NativeFunc=
                             engine.Execute(o.ToString())|>ignore
                         else
                             o.Invoke()|>ignore
-                    with ex->
-                        ($"在脚本\"{scriptName}\"执行\"runScript时遇到错误：",ex)|>Console.WriteLineErr
+                    with ex->Console.WriteLineErrEx
+                                        $"在脚本\"{scriptName}\"执行\"runScript时遇到错误："
+                                        ex scriptName
             let request_fun(u)(m)(p)(f:Action<obj>)=
                 Task.Run(fun ()->
                         try
@@ -414,10 +427,9 @@ module NativeFunc=
                             if f|>isNull|>not then
                                 try
                                     ret|>f.Invoke
-                                with ex->
-                                (
-                                    ($"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误：",ex)|>Console.WriteLineErr
-                                ) 
+                                with ex->Console.WriteLineErrEx
+                                                    $"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误："
+                                                    ex scriptName
                         with _-> ()
                     )|>ignore
             //let mutable oldf=JsValue.FromObject(engine,false:>obj)
@@ -441,7 +453,9 @@ module NativeFunc=
                             //e.ToString()|>f.Invoke|>false.Equals|>not
                         with ex->
                             try
-                            ("在脚本\""+scriptName+"\"执行\""+(int e.``type``|>enum<EventType>).ToString()+"\"BeforeAct回调时遇到错误：",ex)|>Console.WriteLineErr
+                                Console.WriteLineErrEx
+                                    $"在脚本\"{scriptName}\"执行\"{(int e.``type``|>enum<EventType>).ToString()}\"BeforeAct回调时遇到错误："
+                                    ex scriptName
                             with _->()
                             true
                     )
@@ -462,7 +476,9 @@ module NativeFunc=
                                 else true
                         with ex->
                             try
-                            ("在脚本\""+scriptName+"\"执行\""+(int basee.``type``|>enum<EventType>).ToString()+"\"AfterAct回调时遇到错误：",ex)|>Console.WriteLineErr
+                                Console.WriteLineErrEx
+                                    $"在脚本\"{scriptName}\"执行\"{(int basee.``type``|>enum<EventType>).ToString()}\"AfterAct回调时遇到错误："
+                                    ex scriptName
                             with _->()
                             true
                     )
@@ -619,7 +635,9 @@ module NativeFunc=
                         cb.Invoke(result)
                     with ex->
                         try
-                        ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
+                        Console.WriteLineErrEx
+                            $"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误："
+                            ex scriptName
                         with _->()
                 )
                 (js,fullFunc)|>api.JSErunScript
@@ -629,7 +647,9 @@ module NativeFunc=
                         cb.Invoke(result)
                     with ex->
                         try
-                        ($"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误：",ex)|>Console.WriteLineErr
+                        Console.WriteLineErrEx
+                            $"在脚本\"{scriptName}\"执行\"JSErunScript回调时遇到错误："
+                            ex scriptName
                         with _->()
                     )
                 (ename, jdata,fullFunc)|>api.JSEfireCustomEvent
@@ -751,7 +771,9 @@ module NativeFunc=
                             o.Invoke()|>ignore
                         with ex->
                             try
-                                ($"在脚本\"{scriptName}\"执行\"postTick时遇到错误：",ex)|>Console.WriteLineErr
+                                Console.WriteLineErrEx
+                                    $"在脚本\"{scriptName}\"执行\"postTick时遇到错误："
+                                    ex scriptName
                             with _->()
                    |>api.postTick 
             let getAllScore_fun()=
