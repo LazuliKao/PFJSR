@@ -651,22 +651,26 @@ module NativeFunc=
             let runcmd_fun(cmd:string)=
                 if cmd.StartsWith("system ") then
                     let cli = new Diagnostics.Process()
-                    let cmdx=cmd.Substring(7).Replace("\"","\\\"")
+                    let cmdx=cmd.Substring(7)
+                    #if DEBUG
+                    Console.WriteLine(cmd)
+                    Console.WriteLine($"cmd /C \"{cmdx}\"")
+                    #endif
                     cli.StartInfo.FileName <- "cmd"
                     cli.StartInfo.WorkingDirectory<-Basic.Instance.getWorkingPath.Invoke()
                     cli.StartInfo.Arguments <- $"/C \"{cmdx}\""
-                    //cli.StartInfo.RedirectStandardOutput <- true
-                    //cli.StartInfo.RedirectStandardInput <- true
-                    //cli.StartInfo.RedirectStandardError <- true
                     cli.StartInfo.UseShellExecute <- false
                     cli.StartInfo.CreateNoWindow <- false
-                    //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
-                    //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
                     cli.Exited.AddHandler(fun _ e -> 
                         //Console.WriteLine(cli.StandardOutput.ReadToEnd())
                         cli.Dispose()
                     )
                     cli.Start()|>ignore
+                    //cli.StartInfo.RedirectStandardOutput <- true
+                    //cli.StartInfo.RedirectStandardInput <- true
+                    //cli.StartInfo.RedirectStandardError <- true
+                    //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
+                    //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
                         //Console.WriteLine(cli.StandardOutput.ReadToEnd())
                         //Diagnostics.Process.Start("\"%windir%\system32\cmd.exe\" /C \"cmd.exe\"")|>ignore
                     //cli.Execute(cmd.Substring(7),false)
