@@ -651,9 +651,10 @@ module NativeFunc=
             let runcmd_fun(cmd:string)=
                 if cmd.StartsWith("system ") then
                     let cli = new Diagnostics.Process()
+                    let cmdx=cmd.Substring(7).Replace("\"","\\\"")
                     cli.StartInfo.FileName <- "cmd"
                     cli.StartInfo.WorkingDirectory<-Basic.Instance.getWorkingPath.Invoke()
-                    cli.StartInfo.Arguments <- $"/C \"{cmd.Substring(7)}\""
+                    cli.StartInfo.Arguments <- $"/C \"{cmdx}\""
                     //cli.StartInfo.RedirectStandardOutput <- true
                     //cli.StartInfo.RedirectStandardInput <- true
                     //cli.StartInfo.RedirectStandardError <- true
