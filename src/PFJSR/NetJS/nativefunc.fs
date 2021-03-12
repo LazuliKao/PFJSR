@@ -37,6 +37,7 @@ module NativeFunc=
         type startLocalHttpListen_delegate = delegate of int*Func<string,string>->int
         type stopLocalHttpListen_delegate = delegate of int ->bool
         type resetLocalHttpListener_delegate = delegate of int*Func<string,string>->bool
+        type systemCmd_delegate = delegate of string*JsValue->bool
         let shares=new Collections.Generic.Dictionary<string,JsValue>()
         // 本地侦听器
         let httplis=new System.Collections.Generic.Dictionary<int,HttpListener>()
@@ -298,6 +299,41 @@ module NativeFunc=
                     else false
                 else false
             )
+            let systemCmd_fun=systemCmd_delegate(fun c cb->
+                try
+                    #if DEBUG
+                    Console.WriteLine(cmd)
+                    Console.WriteLine($"cmd /C \"{cmdx}\"")
+                    #endif
+                    let cli = new Diagnostics.Process(StartInfo=
+                        Diagnostics.ProcessStartInfo(
+                                                                            FileName="cmd",
+                                                                            WorkingDirectory=getWorkingPath_fun.Invoke(),
+                                                                            UseShellExecute=false,
+                                                                            CreateNoWindow=false
+                                                                      )
+                    )
+                    cli.StartInfo.Arguments <- $"/C \"{c}\""
+                    cli.Exited.AddHandler(fun _ e -> 
+                        //Console.WriteLine(cli.StandardOutput.ReadToEnd())
+                        cli.Dispose()
+                        if cb.IsNull()|>not then
+                            try
+                                cb.Invoke(JsString(e.ToString()))|>ignore
+                            with _->()
+                    )
+                    cli.Start()|>ignore
+                    //cli.StartInfo.RedirectStandardOutput <- true
+                    //cli.StartInfo.RedirectStandardInput <- true
+                    //cli.StartInfo.RedirectStandardError <- true
+                    //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
+                    //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
+                    //Console.WriteLine(cli.StandardOutput.ReadToEnd())
+                    //Diagnostics.Process.Start("\"%windir%\system32\cmd.exe\" /C \"cmd.exe\"")|>ignore
+                    //cli.Execute(cmd.Substring(7),false)
+                    true
+                with _->false
+            )
             member _this.mkdir=mkdir_fun
             member _this.log=log_fun
             member _this.fileReadAllText=fileReadAllText_fun
@@ -319,6 +355,7 @@ module NativeFunc=
             member _this.dirExists=dirExists_fun
             member _this.dirMove=dirMove_fun
             member _this.dirDelete=dirDelete_fun
+            member _this.systemCmd=systemCmd_fun
         let Instance=new Model()
     module Core=
         type getXXActListener_delegate = delegate of JsValue -> unit
@@ -650,31 +687,8 @@ module NativeFunc=
             let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
             let runcmd_fun(cmd:string)=
                 if cmd.StartsWith("system ") then
-                    let cli = new Diagnostics.Process()
                     let cmdx=cmd.Substring(7)
-                    #if DEBUG
-                    Console.WriteLine(cmd)
-                    Console.WriteLine($"cmd /C \"{cmdx}\"")
-                    #endif
-                    cli.StartInfo.FileName <- "cmd"
-                    cli.StartInfo.WorkingDirectory<-Basic.Instance.getWorkingPath.Invoke()
-                    cli.StartInfo.Arguments <- $"/C \"{cmdx}\""
-                    cli.StartInfo.UseShellExecute <- false
-                    cli.StartInfo.CreateNoWindow <- false
-                    cli.Exited.AddHandler(fun _ e -> 
-                        //Console.WriteLine(cli.StandardOutput.ReadToEnd())
-                        cli.Dispose()
-                    )
-                    cli.Start()|>ignore
-                    //cli.StartInfo.RedirectStandardOutput <- true
-                    //cli.StartInfo.RedirectStandardInput <- true
-                    //cli.StartInfo.RedirectStandardError <- true
-                    //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
-                    //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
-                        //Console.WriteLine(cli.StandardOutput.ReadToEnd())
-                        //Diagnostics.Process.Start("\"%windir%\system32\cmd.exe\" /C \"cmd.exe\"")|>ignore
-                    //cli.Execute(cmd.Substring(7),false)
-                    true
+                    Basic.Instance.systemCmd.Invoke(cmdx,JsValue.Null)
                 else
                     cmd|>api.runcmd
             let logout_fun(l:string)=
