@@ -27,25 +27,39 @@ module PluginMain=
                 | _->None
                 )    
                         (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
+    let GetCsrPluginsPath:string=
+        let mutable p="csr"
+        try
+            for line in File.ReadAllLines("plugins\\settings\\csrsetting.ini") do
+                try
+                    let eq= line.IndexOf("=")
+                    if eq <> -1 then
+                        if line.Remove(eq) = "csrdir" then
+                            p<-line.Substring(eq+1)
+                with _->()
+        with _->()
+        p
     let LoadcsrAssembly()=
-        API.csrAssemblyList <- List.choose 
-            ( fun x -> match x with
-                            | null -> None
-                            | _ -> Some(x)
-            )
-            ( 
-                List.map (fun x ->
-                    try
-                        System.Reflection.Assembly.LoadFile(x)
-                    with ex->
-                        //Console.WriteLineErr($"加载外部程序集\".\\csr\\{Path.GetFileName(x)}\"出错",ex)
-                        null
-                ) [for x in "csr"|>Path.GetFullPath|>Directory.GetFiles do if x.EndsWith(".dll") then x]
-            )
-        (String.concat "|" 
-            ($"已将 {API.csrAssemblyList.Length} 个来自CSR插件目录的程序集加载到脚本引擎"
-            ::[for x in API.csrAssemblyList->x.GetName().Name])
-        )|>Console.WriteLine 
+        try
+            API.csrAssemblyList <- List.choose 
+                ( fun x -> match x with
+                                | null -> None
+                                | _ -> Some(x)
+                )
+                ( 
+                    List.map (fun x ->
+                        try
+                            System.Reflection.Assembly.LoadFile(x)
+                        with ex->
+                            //Console.WriteLineErr($"加载外部程序集\".\\csr\\{Path.GetFileName(x)}\"出错",ex)
+                            null
+                    ) [for x in GetCsrPluginsPath|>Path.GetFullPath|>Directory.GetFiles do if x.EndsWith(".dll") then x]
+                )
+            (String.concat "|" 
+                ($"已将 {API.csrAssemblyList.Length} 个来自CSR插件目录的程序集加载到脚本引擎"
+                ::[for x in API.csrAssemblyList->x.GetName().Name])
+            )|>Console.WriteLine
+        with ex->("试图加载来自CSR插件目录的程序集时出错了",ex)|>Console.WriteLineErr
     let Init(_api:MCCSAPI) =
         API.api <- _api
         if Data.Config.LoadCSRAssembly then LoadcsrAssembly()
