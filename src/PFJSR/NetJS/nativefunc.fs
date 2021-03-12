@@ -23,9 +23,12 @@ module NativeFunc=
         type fileWriteLine_delegate = delegate of string*string-> bool
         type fileExists_delegate = delegate of string->bool
         type fileDelete_delegate = delegate of string->bool
-        type fileCopy_delegate = delegate of string*string*bool->bool
+        type fileCopy_delegate = delegate of string*string*JsValue->bool
         type fileMove_delegate = delegate of string*string->bool
+        type dirCreate_delegate = delegate of string->bool
         type dirExists_delegate = delegate of string->bool
+        type dirDelete_delegate = delegate of string->bool
+        type dirMove_delegate = delegate of string*string->bool
         type TimeNow_delegate = delegate of unit -> string
         type setShareData_delegate = delegate of string*JsValue-> unit
         type getShareData_delegate = delegate of string -> JsValue
@@ -88,7 +91,10 @@ module NativeFunc=
             let fileCopy_fun=
                 fileCopy_delegate(fun f t o->
                     try
-                        File.Copy(f,t,o)
+                        if o.IsNull() then
+                            File.Copy(f,t)
+                        else
+                            File.Copy(f,t,Jint.Runtime.TypeConverter.ToBoolean(o))
                         true
                     with _->false
                 )
@@ -99,8 +105,28 @@ module NativeFunc=
                         true
                     with _->false
                 )
+            let dirCreate_fun=
+                dirCreate_delegate(fun d->
+                    try
+                        Directory.CreateDirectory(d)|>isNull|>not
+                    with _->false   
+                )
             let dirExists_fun=
                 dirExists_delegate(fun d->d|>Directory.Exists)
+            let dirMove_fun=
+                dirMove_delegate(fun f t->
+                try
+                    Directory.Move(f,t);
+                    true
+                with _->false
+                )
+            let dirDelete_fun=
+                dirDelete_delegate(fun d->
+                    try
+                        Directory.Delete(d,true)
+                        true
+                    with _->false
+                )
             let TimeNow_fun=
                 TimeNow_delegate(fun _ ->
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -289,7 +315,10 @@ module NativeFunc=
             member _this.fileDelete=fileDelete_fun
             member _this.fileCopy=fileCopy_fun
             member _this.fileMove=fileMove_fun
+            member _this.dirCreate=dirCreate_fun
             member _this.dirExists=dirExists_fun
+            member _this.dirMove=dirMove_fun
+            member _this.dirDelete=dirDelete_fun
         let Instance=new Model()
     module Core=
         type getXXActListener_delegate = delegate of JsValue -> unit
