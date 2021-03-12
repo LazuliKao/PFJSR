@@ -37,7 +37,6 @@ module NativeFunc=
         type startLocalHttpListen_delegate = delegate of int*Func<string,string>->int
         type stopLocalHttpListen_delegate = delegate of int ->bool
         type resetLocalHttpListener_delegate = delegate of int*Func<string,string>->bool
-        type systemCmd_delegate = delegate of string*JsValue->bool
         let shares=new Collections.Generic.Dictionary<string,JsValue>()
         // 本地侦听器
         let httplis=new System.Collections.Generic.Dictionary<int,HttpListener>()
@@ -299,41 +298,6 @@ module NativeFunc=
                     else false
                 else false
             )
-            let systemCmd_fun=systemCmd_delegate(fun c cb->
-                try
-                    #if DEBUG
-                    Console.WriteLine(cmd)
-                    Console.WriteLine($"cmd /C \"{cmdx}\"")
-                    #endif
-                    let cli = new Diagnostics.Process(StartInfo=
-                        Diagnostics.ProcessStartInfo(
-                                                                            FileName="cmd",
-                                                                            WorkingDirectory=getWorkingPath_fun.Invoke(),
-                                                                            UseShellExecute=false,
-                                                                            CreateNoWindow=false
-                                                                      )
-                    )
-                    cli.StartInfo.Arguments <- $"/C \"{c}\""
-                    cli.Exited.AddHandler(fun _ e -> 
-                        //Console.WriteLine(cli.StandardOutput.ReadToEnd())
-                        cli.Dispose()
-                        if cb.IsNull()|>not then
-                            try
-                                cb.Invoke(JsString(e.ToString()))|>ignore
-                            with _->()
-                    )
-                    cli.Start()|>ignore
-                    //cli.StartInfo.RedirectStandardOutput <- true
-                    //cli.StartInfo.RedirectStandardInput <- true
-                    //cli.StartInfo.RedirectStandardError <- true
-                    //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
-                    //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
-                    //Console.WriteLine(cli.StandardOutput.ReadToEnd())
-                    //Diagnostics.Process.Start("\"%windir%\system32\cmd.exe\" /C \"cmd.exe\"")|>ignore
-                    //cli.Execute(cmd.Substring(7),false)
-                    true
-                with _->false
-            )
             member _this.mkdir=mkdir_fun
             member _this.log=log_fun
             member _this.fileReadAllText=fileReadAllText_fun
@@ -355,7 +319,6 @@ module NativeFunc=
             member _this.dirExists=dirExists_fun
             member _this.dirMove=dirMove_fun
             member _this.dirDelete=dirDelete_fun
-            member _this.systemCmd=systemCmd_fun
         let Instance=new Model()
     module Core=
         type getXXActListener_delegate = delegate of JsValue -> unit
@@ -420,6 +383,13 @@ module NativeFunc=
         type getMapColors_delegate = delegate of int*int*int*int->string
         type exportPlayersData_delegate = delegate of unit->string
         type importPlayersData_delegate = delegate of string->bool
+        type systemCmd_delegate = delegate of string*JsValue->bool
+        type systemCmdResult(_StartTime:DateTime,_ExitTime:DateTime,_ExitCode:int)=
+            let _msElapsed:float=Math.Round (_ExitTime - _StartTime).TotalMilliseconds
+            member _this.startTime with get() =_StartTime
+            member _this.exitTime with get() =_ExitTime
+            member _this.exitCode with get() =_ExitCode
+            member _this.msElapsed with get() =_msElapsed
         let timerList=new System.Collections.Generic.Dictionary<int,System.Timers.Timer>()
         type Model(scriptName:string,engine:Jint.Engine)=
             let CheckUuid(uuid:string)=
@@ -685,10 +655,54 @@ module NativeFunc=
                 with ex->  InvokeRemoveFailed("After",ex)
                 result
             let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
+            let systemCmd_fun(c:string)(cb:JsValue)=
+                try
+                    #if DEBUG
+                    Console.WriteLine(cmd)
+                    Console.WriteLine($"cmd /C \"{cmdx}\"")
+                    #endif
+                    let cli = new Diagnostics.Process(StartInfo=
+                        Diagnostics.ProcessStartInfo(
+                                                                            FileName="cmd",
+                                                                            WorkingDirectory=Basic.Instance.getWorkingPath.Invoke(),
+                                                                            UseShellExecute=false,
+                                                                            CreateNoWindow=false
+                                                                        )
+                    )
+                    cli.StartInfo.Arguments <- $"/C \"{c}\""
+                    //cli.Exited.AddHandler(fun _ _ -> 
+                    //    //Console.WriteLine(cli.StandardOutput.ReadToEnd())
+                    //)
+                    cli.Start()|>ignore
+                    Task.Run(fun ()->
+                        try
+                            cli.WaitForExit()|>ignore
+                            #if DEBUG
+                            Console.WriteLine(
+                                 $"Exit time    : {cli.ExitTime}\n" +
+                                 $"Exit code    : {}\n" +
+                                 $"Elapsed time : {System.Math.Round((cli.ExitTime - cli.StartTime).TotalMilliseconds)}ms");
+                            #endif
+                            if cb.IsNull()|>not then
+                                cb.Invoke(JsValue.FromObject(engine,systemCmdResult(cli.StartTime,cli.ExitTime,cli.ExitCode)))|>ignore
+                            cli.Dispose()
+                        with ex->Console.WriteLineErrEx "systemCmd进程退出回调出错" ex scriptName
+                    )|>ignore
+
+                    //cli.StartInfo.RedirectStandardOutput <- true
+                    //cli.StartInfo.RedirectStandardInput <- true
+                    //cli.StartInfo.RedirectStandardError <- true
+                    //cli.OutputDataReceived.AddHandler(fun _ e -> "[System CMD Inside]"+e.Data|>Console.WriteLine)
+                    //cli.ErrorDataReceived.AddHandler(fun _ e -> "[System CMD Inside][Error]"+e.Data|>Console.WriteLine)
+                    //Console.WriteLine(cli.StandardOutput.ReadToEnd())
+                    //Diagnostics.Process.Start("\"%windir%\system32\cmd.exe\" /C \"cmd.exe\"")|>ignore
+                    //cli.Execute(cmd.Substring(7),false)
+                    true
+                with _->false
             let runcmd_fun(cmd:string)=
                 if cmd.StartsWith("system ") then
                     let cmdx=cmd.Substring(7)
-                    Basic.Instance.systemCmd.Invoke(cmdx,JsValue.Null)
+                    systemCmd_fun cmdx JsValue.Null
                 else
                     cmd|>api.runcmd
             let logout_fun(l:string)=
@@ -876,6 +890,7 @@ module NativeFunc=
             let importPlayersData_fun(data:string)=
                 AssertCommercial()
                 data|>api.importPlayersData
+                
             member _this.BeforeActListeners with get()=_BeforeActListeners
             member _this.AfterActListeners with get()=_AfterActListeners
             member _this.setTimeout=setTimeout_delegate(setTimeout_fun)
@@ -943,6 +958,9 @@ module NativeFunc=
             member _this.getMapColors=getMapColors_delegate(getMapColors_fun)
             member _this.exportPlayersData=exportPlayersData_delegate(exportPlayersData_fun)
             member _this.importPlayersData=importPlayersData_delegate(importPlayersData_fun)
+            member _this.systemCmd=systemCmd_delegate(systemCmd_fun)
+
+
     let Reset()=
         for t in Core.timerList.Values do
             try if t.Enabled then t.Stop() with _->()
