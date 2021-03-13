@@ -390,7 +390,6 @@ module NativeFunc=
             member _this.exitTime with get() =p.ExitTime
             member _this.exitCode with get() =p.ExitCode
             member _this.msElapsed with get() =_msElapsed
-            member _this.HandleCount with get() =p.HandleCount
             member _this.Id with get() =p.Id
         let timerList=new System.Collections.Generic.Dictionary<int,System.Timers.Timer>()
         type Model(scriptName:string,engine:Jint.Engine)=
@@ -658,6 +657,11 @@ module NativeFunc=
                 result
             let setCommandDescribe_fun(c)(s)=(c,s)|>api.setCommandDescribe
             let systemCmd_fun(c:string)(cb:JsValue)=
+                if Data.Config.JSR.SystemCmdEnabled|>not then
+                    let exmsg= $"SystemCmd方法已被禁用\x1b[0m\x1b[38;2;240;118;11m(如需解禁请前往{Data.configPathRaw}配置文件将JSR.SystemCmdEnabled属性值改为true)"
+                    raise (PFJsrException exmsg)
+                    //Console.WriteLineErr("调用SystemCmd方法无效",ex)
+                    //raise ex
                 try
                     #if DEBUG
                     Console.WriteLine(cmd)
