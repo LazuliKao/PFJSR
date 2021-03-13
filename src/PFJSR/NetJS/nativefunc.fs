@@ -430,16 +430,18 @@ module NativeFunc=
                     //SynchronizationContext.Current 为获取当前线程的同步上下文，拿到线程的上下文之后可以通过调用Send（同步）和Post （异步）将消息分派到同步上下文，以此实现在指定线程执行！！！
                     t.Elapsed.AddHandler(fun _ _->
                         //c.Post(SendOrPostCallback(fun _->
-                            try
-                                if o.IsString() then engine.Execute(o.ToString())|>ignore
-                                else o.Invoke()|>ignore
-                            with ex->
-                                Console.WriteLineErrEx
-                                    $"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：" 
-                                    ex scriptName
-                            if timerList.ContainsKey(id) then
-                                t.Dispose()
-                                timerList.Remove(id)|>ignore
+                            RunFun(fun ()->
+                                try
+                                    if o.IsString() then engine.Execute(o.ToString())|>ignore
+                                    else o.Invoke()|>ignore
+                                with ex->
+                                    Console.WriteLineErrEx
+                                        $"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：" 
+                                        ex scriptName
+                                if timerList.ContainsKey(id) then
+                                    t.Dispose()
+                                    timerList.Remove(id)|>ignore
+                            )
                         //),null)
                     )
                     t.Start()
@@ -461,17 +463,21 @@ module NativeFunc=
                     timerList.Add(id,t)
                     if o.IsString() then
                         t.Elapsed.AddHandler(fun _ _->
-                            try engine.Execute(o.ToString())|>ignore
-                            with ex->Console.WriteLineErrEx
-                                                $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
-                                                ex scriptName
+                            RunFun(fun ()->
+                                try engine.Execute(o.ToString())|>ignore
+                                with ex->Console.WriteLineErrEx
+                                                    $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
+                                                    ex scriptName
+                            )
                         )
                     else
                         t.Elapsed.AddHandler(fun _ _->
-                            try o.Invoke()|>ignore
-                            with ex->Console.WriteLineErrEx
-                                                $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
-                                                ex scriptName
+                            RunFun(fun ()->
+                                try o.Invoke()|>ignore
+                                with ex->Console.WriteLineErrEx
+                                                    $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
+                                                    ex scriptName
+                            )
                         )
                     t.Start()
                 id
