@@ -672,9 +672,6 @@ module NativeFunc=
                                                                         )
                     )
                     cli.StartInfo.Arguments <- $"/C \"{c}\""
-                    //cli.Exited.AddHandler(fun _ _ -> 
-                    //    //Console.WriteLine(cli.StandardOutput.ReadToEnd())
-                    //)
                     cli.Start()|>ignore
                     Task.Run(fun ()->
                         try
@@ -686,11 +683,11 @@ module NativeFunc=
                                  $"Elapsed time : {System.Math.Round((cli.ExitTime - cli.StartTime).TotalMilliseconds)}ms");
                             #endif
                             if cb.IsNull()|>not then
-                                cb.Invoke(JsValue.FromObject(engine,systemCmdResult(cli)))|>ignore
+                                //cb.Invoke(JsValue.FromObject(engine,systemCmdResult(cli)))|>ignore                                
+                                cb.Invoke(JsString(Newtonsoft.Json.JsonConvert.SerializeObject(systemCmdResult(cli))))|>ignore
                             cli.Dispose()
                         with ex->Console.WriteLineErrEx "systemCmd进程退出回调出错" ex scriptName
                     )|>ignore
-
                     //cli.StartInfo.RedirectStandardOutput <- true
                     //cli.StartInfo.RedirectStandardInput <- true
                     //cli.StartInfo.RedirectStandardError <- true
