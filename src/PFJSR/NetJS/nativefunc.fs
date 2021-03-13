@@ -37,6 +37,9 @@ module NativeFunc=
         type startLocalHttpListen_delegate = delegate of int*Func<string,string>->int
         type stopLocalHttpListen_delegate = delegate of int ->bool
         type resetLocalHttpListener_delegate = delegate of int*Func<string,string>->bool
+        #if DEBUG
+        type throwClrException_delegate = delegate of unit->unit
+        #endif
         let shares=new Collections.Generic.Dictionary<string,JsValue>()
         // 本地侦听器
         let httplis=new System.Collections.Generic.Dictionary<int,HttpListener>()
@@ -319,6 +322,9 @@ module NativeFunc=
             member _this.dirExists=dirExists_fun
             member _this.dirMove=dirMove_fun
             member _this.dirDelete=dirDelete_fun
+            #if DEBUG
+            member _this.throwClrException=throwClrException_delegate(fun ()->failwith "test")
+            #endif
         let Instance=new Model()
     module Core=
         type getXXActListener_delegate = delegate of JsValue -> unit
@@ -663,10 +669,6 @@ module NativeFunc=
                     //Console.WriteLineErr("调用SystemCmd方法无效",ex)
                     //raise ex
                 try
-                    #if DEBUG
-                    Console.WriteLine(cmd)
-                    Console.WriteLine($"cmd /C \"{cmdx}\"")
-                    #endif
                     let cli = new Diagnostics.Process(StartInfo=
                         Diagnostics.ProcessStartInfo(
                                                                             FileName="cmd",
@@ -683,7 +685,7 @@ module NativeFunc=
                             #if DEBUG
                             Console.WriteLine(
                                  $"Exit time    : {cli.ExitTime}\n" +
-                                 $"Exit code    : {}\n" +
+                                 $"Exit code    : {cli.ExitCode}\n" +
                                  $"Elapsed time : {System.Math.Round((cli.ExitTime - cli.StartTime).TotalMilliseconds)}ms");
                             #endif
                             if cb.IsNull()|>not then

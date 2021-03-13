@@ -8,17 +8,31 @@ module Loader=
     let LoadJSRScript(filePath:string)=
         let scriptName=filePath|>Path.GetFileNameWithoutExtension
         try
-            let options=new Jint.Options()
-            options.AllowClr()|>ignore
-            options.AllowClr(typeof<FSharp.Reflection.FSharpType>.Assembly)|>ignore
-            //options.AllowClr(typeof<Colorful.Console>.Assembly)|>ignore
-            options.AllowClr(typeof<Jint.Engine>.Assembly)|>ignore
-            options.AllowClr(typeof<Newtonsoft.Json.JsonConvert>.Assembly)|>ignore
-            for x in API.csrAssemblyList do
-                options.AllowClr(x)|>ignore
-                //#if DEBUG
-                //Console.WriteLine("加入程序集"+x.FullName)
-                //#endif
+            let options=Jint.Options().AllowClr() 
+            #if DEBUG
+            options.DebugMode()|>ignore
+            #endif
+            (
+            #if DEBUG
+            fun ex->
+            #else
+            fun _->
+            #endif
+            #if DEBUG
+            Console.WriteLine (ex.ToString())
+            #endif
+            true
+            )|>options.CatchClrExceptions|>ignore
+            let ( !~ ) (a: System.Reflection.Assembly) = options.AllowClr(a)|>ignore
+            let ( !+ ) (t: System.Type) = !~ t.Assembly
+            !+typeof<Jint.Engine>
+            !+typeof<Reflection.FSharpType>
+            !+typeof<Newtonsoft.Json.JsonConvert>
+            for x in API.csrAssemblyList do 
+                !~x
+                #if DEBUG
+                Console.WriteLine("加入程序集"+x.FullName)
+                #endif
             let jsContent=filePath|>File.ReadAllText
             API.LoadedScripts<-new API.ScriptItemModel(API.ScriptType.JSR,scriptName, filePath,jsContent)::API.LoadedScripts
             let engine=new Jint.Engine(options)

@@ -34,7 +34,7 @@ module Console=
             (ex.ToString())
     let WriteLineErrEx(content:obj)(ex:exn)(name:string)=
         match ex with
-            | :? API.PFJsrException -> WriteLineWarn(content,ex.Message)
+            //| :? API.PFJsrException -> WriteLineWarn(content,ex.Message)
             | :? Esprima.ParserException as jex-> 
                 try
                     let a=List.tryFind (fun x->(x:>API.ScriptItemModel).Type=API.ScriptType.JSR && (x:>API.ScriptItemModel).Name=name) API.LoadedScripts
@@ -49,10 +49,14 @@ module Console=
                             Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
                     else
                         if c=0 then
-                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                        ////单个字符
+                        //    Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                        //else
+                        //    Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..c]+"\x1b[0m\x1b[2m"+Line.[c+1..]
+                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line+"\x1b[0m\x1b[2m"
                         else
-                            Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..c]+"\x1b[0m\x1b[2m"+Line.[c+1..]
-                    printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;175;238;238m\t%s >>>\n\t信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                            Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..]+"\x1b[0m\x1b[2m"
+                        printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;131;150;225m\t%s \x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
                             PluginName
                             (content.ToString())
                             "Esprima.ParserException"
@@ -74,16 +78,30 @@ module Console=
                             Line<-Line.[..jex.Column-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[jex.Column..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
                     else
                         if jex.Column=0 then
-                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                        ////单个字符
+                        //    Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                        //else
+                        //    Line<-Line.[..jex.Column-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[jex.Column..jex.Column]+"\x1b[0m\x1b[2m"+Line.[jex.Column+1..]                        //if jex.Column=0 then
+                            Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line+"\x1b[0m\x1b[2m"
                         else
-                            Line<-Line.[..jex.Column-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[jex.Column..jex.Column]+"\x1b[0m\x1b[2m"+Line.[jex.Column+1..]
-                    printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;175;238;238m\t%s >>>\n\t信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
-                            PluginName
-                            (content.ToString())
-                            "Runtime.JavaScriptException"
-                            (jex.Message)
-                            (jex.LineNumber)
-                            (jex.Column)
-                            (Line.Trim())
+                            Line<-Line.[..jex.Column-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[jex.Column..]+"\x1b[0m\x1b[2m"
+                    if jex.Message.StartsWith(API.PFJsrExceptionStart) then
+                        printfn "\x1b[38;2;240;128;128m[\x1b[38;2;253;99;71mWARN\x1b[38;2;240;128;128m][\x1b[38;2;167;132;239m%s\x1b[38;2;240;128;128m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;255;153;144m\t%s \x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;175;238;238m信息:\t\x1b[4m\x1b[38;2;127;255;1m\x1b[48;2;25;25;112m%s\x1b[0m\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                                PluginName
+                                (content.ToString())
+                                "PFJsrException"
+                                (jex.Message.Substring(API.PFJsrExceptionStart.Length))
+                                (jex.LineNumber)
+                                (jex.Column)
+                                (Line.Trim())
+                    else
+                        printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;238;34;175m\t%s \x1b[38;2;2;250;250m>>>\x1b[0m\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                                PluginName
+                                (content.ToString())
+                                "Runtime.JavaScriptException"
+                                (jex.Message)
+                                (jex.LineNumber)
+                                (jex.Column)
+                                (Line.Trim())
                 with _->WriteLineErr(content,ex)
             | _ -> WriteLineErr(content,ex)

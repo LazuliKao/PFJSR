@@ -3,8 +3,9 @@ open CSR
 module API=
     let mutable api:MCCSAPI = null
     let mutable csrAssemblyList:list<System.Reflection.Assembly>=[]
+    let PFJsrExceptionStart="PFJsrException:"
     type PFJsrException(ex)=
-        inherit System.Exception(ex)
+        inherit System.Exception(PFJsrExceptionStart+ex)
     type ScriptType=
         | JSR
         | VJS
