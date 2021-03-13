@@ -384,12 +384,14 @@ module NativeFunc=
         type exportPlayersData_delegate = delegate of unit->string
         type importPlayersData_delegate = delegate of string->bool
         type systemCmd_delegate = delegate of string*JsValue->bool
-        type systemCmdResult(_StartTime:DateTime,_ExitTime:DateTime,_ExitCode:int)=
-            let _msElapsed:float=Math.Round (_ExitTime - _StartTime).TotalMilliseconds
-            member _this.startTime with get() =_StartTime
-            member _this.exitTime with get() =_ExitTime
-            member _this.exitCode with get() =_ExitCode
+        type systemCmdResult(p:Diagnostics.Process)=
+            let _msElapsed:float=Math.Round (p.ExitTime - p.StartTime).TotalMilliseconds
+            member _this.startTime with get() =p.StartTime
+            member _this.exitTime with get() =p.ExitTime
+            member _this.exitCode with get() =p.ExitCode
             member _this.msElapsed with get() =_msElapsed
+            member _this.HandleCount with get() =p.HandleCount
+            member _this.Id with get() =p.Id
         let timerList=new System.Collections.Generic.Dictionary<int,System.Timers.Timer>()
         type Model(scriptName:string,engine:Jint.Engine)=
             let CheckUuid(uuid:string)=
@@ -684,7 +686,7 @@ module NativeFunc=
                                  $"Elapsed time : {System.Math.Round((cli.ExitTime - cli.StartTime).TotalMilliseconds)}ms");
                             #endif
                             if cb.IsNull()|>not then
-                                cb.Invoke(JsValue.FromObject(engine,systemCmdResult(cli.StartTime,cli.ExitTime,cli.ExitCode)))|>ignore
+                                cb.Invoke(JsValue.FromObject(engine,systemCmdResult(cli)))|>ignore
                             cli.Dispose()
                         with ex->Console.WriteLineErrEx "systemCmd进程退出回调出错" ex scriptName
                     )|>ignore
