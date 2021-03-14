@@ -62,6 +62,7 @@ module PluginMain=
         with ex->("试图加载来自CSR插件目录的程序集时出错了",ex)|>Console.WriteLineErr
     let Init(_api:MCCSAPI) =
         API.api <- _api
+        Console.Setup()
         if Data.Config.LoadCSRAssembly then LoadcsrAssembly()
         LoadJSRScripts()
         LoadVanillaScripts()
