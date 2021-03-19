@@ -6,13 +6,69 @@ module VanillaScripts=
     let mutable ScriptQueue:list<string*string>=[]
     let mutable HasSetup=false
     let SetupEngine()=
+        if HasSetup|>not then 
+            API.api.addBeforeActListener(CSR.EventKey.onScriptEngineCmd,fun _e->
+                try
+                    let e=CSR.ScriptEngineCmdEvent.getFrom(_e)
+                    if e.cmd.StartsWith("pfjsr ") then
+                        if e.cmd.StartsWith("pfjsr JSRErunScript ") then
+                            let script=e.cmd.Substring("pfjsr JSRErunScript ".Length)
+                            #if DEBUG
+                            Console.WriteLine(script)
+                            #endif
+                            false
+                        else true
+                    else true
+                with _->true
+            )|>ignore
+            API.api.addBeforeActListener(CSR.EventKey.onScriptEngineLog,fun _e->
+                try
+                    let e=CSR.ScriptEngineLogEvent.getFrom(_e)
+                    Console.log(e.log)
+                    //if e.cmd.StartsWith("pfjsr ") then
+                    //    if e.cmd.StartsWith("pfjsr JSRErunScript ") then
+                    //        let script=e.cmd.Substring("pfjsr JSRErunScript ".Length)
+                    //        #if DEBUG
+                    //        Console.WriteLine(script)
+                    //        #endif
+                    //        false
+                    //    else true
+                    //else true
+                with _->()
+                true
+            )|>ignore
         HasSetup<-API.api.addAfterActListener(CSR.EventKey.onScriptEngineInit,fun e->
             try
                 Tasks.Task.Run(fun ()->
                     try
-                        Thread.Sleep(5000)
-                        let id="pfjsrvs"+System.Guid.NewGuid().GetHashCode().ToString()
-                        ($"server.registerSystem(0, 0).listenForEvent('pfjsr:{id}', (e_{id})=>{{try{{eval(e_{id}.data);}}catch(err){{console.log(err);}}}});",
+                        Thread.Sleep(3000)
+                        //let id="pfjsrvs"
+                        let id="pfjsrvs"+System.Guid.NewGuid().GetHashCode().ToString().Replace("-","")
+                        #if DEBUG
+                        Console.WriteLine(id)
+                        #endif
+                        (
+                            $"""const System_{id}=server.registerSystem(0, 0);
+let logs = System_{id}.createEventData('minecraft:script_logger_config');
+logs.data.log_information = true;
+logs.data.log_errors = true;
+logs.data.log_warnings = true;
+System_{id}.broadcastEvent('minecraft:script_logger_config', logs);
+
+
+System_{id}.listenForEvent('pfjsr:{id}', (e_{id})=>{{
+    function JSRErunScript(e){{
+        System_{id}.executeCommand("pfjsr JSRErunScript "+e,null);
+    }}
+    try{{
+        eval(e_{id}.data);
+    }}
+    catch(err){{
+        JSRErunScript(`log('[Error][VanillaScripts]${{err}}');`)
+    }}
+}});"""
+                        //$"server.registerSystem(0, 0).listenForEvent('pfjsr:{id}', (e_{id})=>{{try{{eval(e_{id}.data);}}catch(err){{console.log(err);}}}});"
+                        ,
                             fun e->
                                 try
                                     Tasks.Task.Run(fun ()->

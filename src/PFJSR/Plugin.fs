@@ -26,7 +26,7 @@ module PluginMain=
                 | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
                 | _->None
                 )    
-                        (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
+                        (DirPath|>Directory.GetFiles)) do file|>Loader.LoadVanillaScript
     let GetCsrPluginsPath:string=
         let mutable p="csr"
         try

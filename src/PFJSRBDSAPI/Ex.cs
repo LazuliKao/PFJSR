@@ -9,6 +9,19 @@ namespace PFJSRBDSAPI
 {
     public static class Ex
     {
+        public static bool HasConsole
+        {
+            get
+            {
+                try
+                {
+                    _ = Console.WindowHeight;
+                    return true;
+                }
+                catch { return false; }
+            }
+        }
+
         private const int STD_OUTPUT_HANDLE = -11;
         private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
         //private const uint DISABLE_NEWLINE_AUTO_RETURN = 0x0008;

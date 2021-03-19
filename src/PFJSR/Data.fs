@@ -4,7 +4,7 @@ open Newtonsoft.Json
 open System.IO
 module Data=
     type ConfigVanillaScriptsModel() =
-        let mutable _Enable : bool = false
+        let mutable _Enable : bool = true
         let mutable _Path : string = "scripts"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
         member _this.Path with get() =_Path and set value  =_Path<-value
