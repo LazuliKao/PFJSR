@@ -37,6 +37,18 @@ module VanillaScripts=
                             #if DEBUG
                             Console.WriteLine(name+">>>"+script)
                             #endif
+                            let i=List.findIndex (fun (x,_)->(x:>API.ScriptItemModel).Name=name) ScriptQueue
+                            #if DEBUG
+                            Console.WriteLine(i)
+                            #endif
+                            if i= -1 then 
+                                Console.WriteLineWarn("未找到:",name)
+                            else
+                                Console.WriteLine(i)
+                                let (_,e)=ScriptQueue.[i]
+                                Console.WriteLine(i)
+                                e.Execute(script)|>ignore
+                                Console.WriteLine(i)
                             false
                         else true
                     else true
@@ -79,7 +91,7 @@ System_{id}.broadcastEvent('minecraft:script_logger_config', logs);
 System_{id}.listenForEvent('pfjsr:{id}', (e_{id})=>{{
     const scriptData{id}=JSON.parse(e_{id}.data)
     function JSRErunScript(e){{
-        System_{id}.executeCommand("pfjsr JSRErunScript "+e.toString()+":"+scriptData{id}.name,null);
+        System_{id}.executeCommand("pfjsr JSRErunScript "+scriptData{id}.name+":"+e.toString(),null);
     }}
     try{{
         eval(scriptData{id}.content);
