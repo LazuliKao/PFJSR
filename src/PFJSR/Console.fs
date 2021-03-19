@@ -171,5 +171,5 @@ module Console=
             | _ -> WriteLineErr(content,ex)
     let Setup()=
         try
-            PFJSRBDSAPI.Ex.FixConsole()
+            if ConsoleMode then PFJSRBDSAPI.Ex.FixConsole()
         with _->()
