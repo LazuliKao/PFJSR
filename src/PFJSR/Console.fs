@@ -109,7 +109,7 @@ module Console=
                 with _->WriteLineErr(content,ex)
             | :? Jint.Runtime.JavaScriptException as jex -> 
                try
-                    let a=List.tryFind (fun x->(x:>API.ScriptItemModel).Type=API.ScriptType.JSR && (x:>API.ScriptItemModel).Name=name) API.LoadedScripts
+                    let a=List.tryFind (fun x->(*(x:>API.ScriptItemModel).Type=API.ScriptType.JSR&& *) (x:>API.ScriptItemModel).Name=name) API.LoadedScripts
                     let mutable Line=a.Value.Content.Split('\n').[jex.LineNumber-1]
                     let endM=Text.RegularExpressions.Regex.Match(Line.[jex.Column+1..],@"[\p{P}\p{Z}]")
                     if endM.Success then 

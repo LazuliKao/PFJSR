@@ -14,6 +14,9 @@ module API=
         member _this.Name :string=n
         member _this.Path :string=p
         member _this.Content :string=c
+    type VanillaScriptException() =
+        inherit System.Exception("VanillaScriptException")
+        //member _this.Type :ScriptType=t
     let mutable LoadedScripts:list<ScriptItemModel>=[]
     let mutable lock=false
     let rec WaitForLock()=
