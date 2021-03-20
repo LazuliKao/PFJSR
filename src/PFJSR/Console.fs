@@ -168,6 +168,70 @@ module Console=
                                 (jex.Column)
                                 (Line.Trim())
                 with _->WriteLineErr(content,ex)
+            | :? API.VanillaScriptException as vex->
+                try
+                    let mutable tempI=0
+                    let stackStr=String.concat "\n\t" [
+                        for (raw,funName,tp,l,c) in vex.stack do
+                            if raw.Equals("at Anonymous function (CSR_tmpscript_0:14:9)")|>not then
+                                //$"  方法:{funName}|类型:{t}|行:{l}|列{c}"
+                                let a=List.tryFind (fun x->(x:>API.ScriptItemModel).Type=API.ScriptType.VJS && (x:>API.ScriptItemModel).Name=name) API.LoadedScripts
+                                let mutable Line=a.Value.Content.Split('\n').[l-1]
+                                let c=c-1
+                                let endM=Text.RegularExpressions.Regex.Match(Line.[c+1..],@"[\p{P}\p{Z}]")
+                                if endM.Success then 
+                                    let endIndex = c + endM.Index
+                                    if c=0 then
+                                        if ConsoleMode then Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
+                                    else
+                                        if ConsoleMode then Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..endIndex]+"\x1b[0m\x1b[2m"+Line.[endIndex+1..]
+                                else
+                                    if c=0 then
+                                    ////单个字符
+                                    //    Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[..0]+"\x1b[0m\x1b[2m"+Line.[1..]
+                                    //else
+                                    //    Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..c]+"\x1b[0m\x1b[2m"+Line.[c+1..]
+                                        if ConsoleMode then Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line+"\x1b[0m\x1b[2m"
+                                    else
+                                        if ConsoleMode then Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..]+"\x1b[0m\x1b[2m"
+                                let sp=String.concat "" [for _=1 to tempI do "  "]
+                                tempI<-tempI+1
+                                let ed=if tempI=vex.stack.Length-1 then "┗" else "┣"
+                                let t="\t"
+                                if ConsoleMode then 
+                                    let oc="\x1b[38;2;232;147;119m"
+                                    let oic="\x1b[38;2;120;147;249m"
+                                    let tc="\x1b[38;2;82;137;99m"
+                                    let ic="\x1b[38;2;167;167;139m"
+                                    let bc="\x1b[38;2;175;238;238m"
+                                    let dc="\x1b[0m"
+                                    let d2="\x1b[2m"
+                                    let d4="\x1b[4m"
+                                    $"""{oc}{sp}┗ {oic}[{tempI}]
+{t}{sp}{oc}  ┣ {bc}方法:{t}{ic}{funName}{tc}[:{tp}]
+{t}{sp}{oc}  ┣ {bc}位于:{t}{ic}第 {ic}{d4}%d{l}{dc}{ic} 行  {ic}{ic}第 {d4}%d{c}{dc}{ic} 列
+{t}{sp}{oc}  {ed} {bc}原文:{t}{dc}{d2}{Line.Trim()}{dc}"""
+                                else
+                                    $"""{sp}[{tempI}]:
+{t}{sp}方法:{t}{funName}[:{tp}]
+{t}{sp}位于:{t}第 %d{l} 行  第 %d{c} 列
+{t}{sp}原文:{t}{Line.Trim()}"""
+                        ]
+                    if ConsoleMode then
+                        printfn "\x1b[38;2;240;128;128m[\x1b[38;2;253;99;71mWARN\x1b[38;2;240;128;128m][\x1b[38;2;167;132;239m%s\x1b[38;2;240;128;128m]\x1b[38;2;254;197;189m%s\n\t\x1b[38;2;255;153;144m[%s]\x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;232;147;119m┣ \x1b[38;2;175;238;238m信息:\t\x1b[38;2;190;200;200m%s\n\t%s"
+                            PluginName
+                            ("[VanillaScriptException]\x1b[38;2;234;107;99m"+content.ToString())
+                            (vex.scriptName+".js")
+                            vex.message
+                            stackStr
+                    else
+                        printfn "[WARN][%s]%s\n[%s]>>>%s\n%s"
+                            PluginName
+                            ("[VanillaScriptException]"+content.ToString())
+                            (vex.scriptName+".js")
+                            vex.message
+                            stackStr
+                with _->WriteLineErr(content,ex)
             | _ -> WriteLineErr(content,ex)
     let Setup()=
         try

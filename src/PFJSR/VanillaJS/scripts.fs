@@ -15,19 +15,15 @@ module VanillaScripts=
                     if e.cmd.StartsWith("pfjsr ") then
                         if e.cmd.StartsWith("pfjsr RaiseError ") then
                             let info=JObject.Parse(e.cmd.Substring("pfjsr RaiseError ".Length))
-                            let scriptName=info.Value<string>("script")
-                            let exname=info.Value<string>("exname")
-                            let message=info.Value<string>("message")
-                            let stack=info.Value<string>("stack")
-                            let stackmatch=Regex(@"at(\s.*?)\s\((.*?):(\d+):(\d+)\)").Matches(stack)
                             //Console.WriteLineErrEx 
                             //    "VanillaScriptException"
                             //    (API.VanillaScriptException())
                             //    scriptName
+                            let ex=API.VanillaScriptException(info)
                             Console.WriteLineErrEx
-                                $"VanillaScriptException from {scriptName}"
-                                (exn($"{exname}:{message}\n{stack}"))
-                                scriptName
+                                $"来自原生脚本的错误"
+                                ex
+                                ex.scriptName
                             false
                         else if e.cmd.StartsWith("pfjsr JSRErunScript ") then
                             let all=e.cmd.Substring("pfjsr JSRErunScript ".Length)
@@ -38,17 +34,11 @@ module VanillaScripts=
                             Console.WriteLine(name+">>>"+script)
                             #endif
                             let i=List.findIndex (fun (x,_)->(x:>API.ScriptItemModel).Name=name) ScriptQueue
-                            #if DEBUG
-                            Console.WriteLine(i)
-                            #endif
                             if i= -1 then 
                                 Console.WriteLineWarn("未找到:",name)
                             else
-                                Console.WriteLine(i)
                                 let (_,e)=ScriptQueue.[i]
-                                Console.WriteLine(i)
                                 e.Execute(script)|>ignore
-                                Console.WriteLine(i)
                             false
                         else true
                     else true
@@ -74,7 +64,11 @@ module VanillaScripts=
             try
                 Tasks.Task.Run(fun _->
                     try
+                        #if DEBUG
+                        Thread.Sleep(1000)
+                        #else
                         Thread.Sleep(3000)
+                        #endif
                         //let id="pfjsrvs"
                         let id="pfjsrvs"+System.Guid.NewGuid().GetHashCode().ToString().Replace("-","")
                         #if DEBUG
