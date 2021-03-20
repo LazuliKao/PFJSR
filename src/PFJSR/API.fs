@@ -2,6 +2,8 @@
 open CSR
 open Newtonsoft.Json.Linq
 open System.Text.RegularExpressions
+open System.Collections.Generic
+open System.Threading.Tasks
 
 module API=
     let mutable api:MCCSAPI = null
@@ -27,16 +29,4 @@ module API=
         member _this.message=info.Value<string>("message")
         //override _this.ToString()=""
     let mutable LoadedScripts:list<ScriptItemModel>=[]
-    let mutable lock=false
-    let rec WaitForLock()=
-        while lock do
-            System.Threading.Thread.Sleep(3)
-        if lock then WaitForLock()
-        if lock then WaitForLock()
-    let RunFun(e:unit->unit)=
-        WaitForLock()
-        WaitForLock()
-        lock<-true
-        e()
-        lock<-false
         //System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(e,System.Windows.Threading.DispatcherPriority.ApplicationIdle)

@@ -5,9 +5,10 @@ open System.IO
 module Data=
     type ConfigVanillaScriptsModel() =
         let mutable _Enable : bool = true
-        let mutable _Path : string = "scripts"
+        let mutable _Path : string = "PFJS"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
         member _this.Path with get() =_Path and set value  =_Path<-value
+        member val FileRegex=".*\.v\.js$" with get, set
     type ConfigJSRModel() = 
         let mutable _Enable : bool = true
         let mutable _Path : string = "PFJS"
@@ -17,6 +18,7 @@ module Data=
         let mutable _HotReloadCommand : string = "pfjsr reload"
         member _this.Enable with get() =_Enable and set value  =_Enable<-value
         member _this.Path with get() =_Path and set value  =_Path<-value
+        member val FileRegex=".*(?<!\.v)\.js$" with get, set
         member _this.CheckUuid with get() =_CheckUUID and set value  =_CheckUUID<-value
         member _this.HotReloadEnabled with get() =_HotReloadEnabled and set value  =_HotReloadEnabled<-value
         member _this.SystemCmdEnabled with get() =_SystemCmdEnabled and set value  =_SystemCmdEnabled<-value

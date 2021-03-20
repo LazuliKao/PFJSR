@@ -2,6 +2,8 @@
 open CSR
 //open Colorful
 open System.IO
+open System.Text.RegularExpressions
+
 module PluginMain=
     let LoadJSRScripts()=
         if Data.Config.JSR.Enable then
@@ -11,7 +13,8 @@ module PluginMain=
                 "创建JSR插件目录:"+Data.Config.JSR.Path|>Console.WriteLine
             for file in (Seq.choose (fun x->
                 match x:string with
-                | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
+                | jsfile when Regex(Data.Config.JSR.FileRegex, RegexOptions.IgnoreCase).IsMatch(Path.GetFileName(jsfile)) ->
+                    Some(jsfile)
                 | _->None
                 ) 
                         (DirPath|>Directory.GetFiles)) do file|>Loader.LoadJSRScript
@@ -23,7 +26,8 @@ module PluginMain=
                 "创建NativeScripts目录:"+Data.Config.VanillaScripts.Path|>Console.WriteLine
             for file in (Seq.choose (fun x->
                 match x:string with
-                | jsfile when x.ToLower().EndsWith(".js") ->Some(jsfile)
+                | jsfile when Regex(Data.Config.VanillaScripts.FileRegex, RegexOptions.IgnoreCase).IsMatch(Path.GetFileName(jsfile)) ->
+                    Some(jsfile)
                 | _->None
                 )    
                         (DirPath|>Directory.GetFiles)) do file|>Loader.LoadVanillaScript

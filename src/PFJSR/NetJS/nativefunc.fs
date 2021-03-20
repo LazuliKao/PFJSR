@@ -397,6 +397,25 @@ module NativeFunc=
             member _this.exitCode with get() =p.ExitCode
             member _this.msElapsed with get() =_msElapsed
             member _this.Id with get() =p.Id
+        #if _
+        #else
+        let FunThreadEvent=new System.Threading.ManualResetEvent(false)
+        let FunQueue=new Generic.Queue<unit->unit>()
+        let FunTask=Task.Run(fun _->
+            while true do
+                try
+                    while FunQueue.Count>0 do
+                        let e=FunQueue.Dequeue()
+                        e()
+                    FunThreadEvent.WaitOne()|>ignore
+                with _->()
+        )
+        let RunFun(e:unit->unit)=
+            e|>FunQueue.Enqueue
+            try
+                FunThreadEvent.Set()|>ignore
+            with _->()
+        #endif
         let timerList=new System.Collections.Generic.Dictionary<int,System.Timers.Timer>()
         type Model(scriptName:string,engine:Jint.Engine)=
             let CheckUuid(uuid:string)=
