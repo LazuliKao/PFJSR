@@ -70,7 +70,7 @@
      >//取消一个TimeOut
      >clearTimeout(id);
      >```
-- #### [增加] `setInterval`方法，设置循环计时器
+- #### [Njsr最新版本已增加] `setInterval`方法，设置循环计时器
     - 参数个数：2个
     - 参数类型：字符串/函数，整型
     - 参数详解：code - 待延时执行的指令字符串/函数对象，millisec - 循环毫秒数
@@ -79,7 +79,7 @@
      >let id = setInterval("xxx();",1000);
      >log("当前计时器的ID：" + id);
      >```
-- #### [增加] `clearInterval`方法：
+- #### [Njsr最新版本已增加] `clearInterval`方法：
      >```js
      >//清除一个计时器
      >clearInterval(id);
@@ -125,4 +125,19 @@
        >});
        >```
 
+</details>
+
+<details>
+<summary><b>原版脚本引擎(VanillaScripts)与JSR联动<b></summary>
+
+- ### 如何开启
+  - 使用[UnlockScripting](https://www.minebbs.com/resources/unlockscripting.1610/)或对地图开启实验玩法以启用官方脚本
+  - 将名称为`*.v.js`的文件置于对应目录，即可加载(目录参见`plugins\PFJSR\config.json`)
+- ### 如何调用JSR方法
+  - `JSRErunScript(a1:string);`
+    - a1 : JS文本
+    - 说明：官方脚本内调用JSR引擎执行脚本
+    - 示例：`JSRErunScript('log(''VanillaScript调用JSR输出信息'')') `
+- ### 官方脚本引擎脚本编写参考
+  - https://bedrock.dev/zh/docs/stable/Scripting
 </details>
