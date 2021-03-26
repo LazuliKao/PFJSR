@@ -407,6 +407,7 @@ module NativeFunc=
                     while FunQueue.Count>0 do
                         let e=FunQueue.Dequeue()
                         e()
+                    FunThreadEvent.Reset()|>ignore
                     FunThreadEvent.WaitOne()|>ignore
                 with _->()
         )
