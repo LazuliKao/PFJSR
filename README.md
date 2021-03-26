@@ -7,7 +7,7 @@
 > ### 仅供学习交流使用
 > ### 核心功能参考自[NetJSR](https://github.com/zhkj-liuxiaohua/BDSJSR2)
 >
-> ### 感谢@liuxiaohua维护的BDSNetRunner,极大地降低了插件开发成本
+> ### 感谢@liuxiaohua维护的[BDSNetRunner](https://github.com/zhkj-liuxiaohua/BDSNetRunner),极大地降低了插件开发成本
 
 
 ---
