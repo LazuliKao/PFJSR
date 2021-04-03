@@ -5,7 +5,8 @@ open CSR
         //插件主入口 请勿随意更改(由gxh翻译自CSRAPI)
         static member public onServerStart(pathandversion:string):int =
             #if DEBUG
-            printfn "%s" pathandversion
+            
+            "%s" pathandversion
             #endif
             let mutable result:int = -1
             let pav:string[] =pathandversion.Split(",".ToCharArray())
@@ -15,10 +16,8 @@ open CSR
                 let commercial:bool = pav.GetValue(pav.Length - 1).Equals("1")
                 mapi <- MCCSAPI(path, Version, commercial)
                 if not (isNull(mapi))  then
-                     printfn "[F#-PFJSR] plugin is Loading."
                      System.GC.KeepAlive(mapi);
                      Plugin.onStart(mapi)|>ignore
-                     printfn "[F#-PFJSR] plugin Load Success."
                      result <- 0
             if result = -1 then  printf "[F#-PFJSR] plugin Load failed."
             result
