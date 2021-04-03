@@ -88,24 +88,24 @@ module Console=
                             if ConsoleMode then Line<-"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line+"\x1b[0m\x1b[2m"
                         else
                             if ConsoleMode then Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..]+"\x1b[0m\x1b[2m"
-                        if ConsoleMode then 
-                            printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;131;150;225m\t%s \x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
-                                PluginName
-                                (content.ToString())
-                                "Esprima.ParserException"
-                                (jex.Description)
-                                (jex.LineNumber)
-                                (c)
-                                (Line.Trim())
-                        else
-                            printfn "[ERROR][%s]%s\n\t%s >>>\n\t信息:\t%s\n\t位于:\t第 %d 行  第 %d 列\n\t原文:\t%s"
-                                PluginName
-                                (content.ToString())
-                                "Esprima.ParserException"
-                                (jex.Description)
-                                (jex.LineNumber)
-                                (c)
-                                (Line.Trim())
+                    if ConsoleMode then 
+                        printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;131;150;225m\t%s \x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                            PluginName
+                            (content.ToString())
+                            "Esprima.ParserException"
+                            (jex.Description)
+                            (jex.LineNumber)
+                            (c)
+                            (Line.Trim())
+                    else
+                        printfn "[ERROR][%s]%s\n\t%s >>>\n\t信息:\t%s\n\t位于:\t第 %d 行  第 %d 列\n\t原文:\t%s"
+                            PluginName
+                            (content.ToString())
+                            "Esprima.ParserException"
+                            (jex.Description)
+                            (jex.LineNumber)
+                            (c)
+                            (Line.Trim())
                 with _->WriteLineErr(content,ex)
             | :? Jint.Runtime.JavaScriptException as jex -> 
                try
