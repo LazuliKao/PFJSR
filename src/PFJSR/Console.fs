@@ -55,12 +55,12 @@ module Console=
     let WriteLineErr(content:obj,ex:exn)=
         match ConsoleMode with
         | true->
-            printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;147;147;119m%s\x1b[0m"
+            printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\r\n\x1b[38;2;147;147;119m%s\x1b[0m"
                 PluginName
                 (content.ToString())
                 (ex.ToString())
         | _->
-            printfn "[ERROR][%s]%s\n%s"
+            printfn "[ERROR][%s]%s\r\n%s"
                 PluginName
                 (content.ToString())
                 (ex.ToString())
@@ -89,7 +89,6 @@ module Console=
                         else
                             if ConsoleMode then Line<-Line.[..c-1]+"\x1b[0m\x1b[4m\x1b[40m\x1b[33m\x1b[1m"+Line.[c..]+"\x1b[0m\x1b[2m"
                     if ConsoleMode then 
-                        printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;131;150;225m\t%s \x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
                             PluginName
                             (content.ToString())
                             "Esprima.ParserException"
@@ -98,7 +97,7 @@ module Console=
                             (c)
                             (Line.Trim())
                     else
-                        printfn "[ERROR][%s]%s\n\t%s >>>\n\t信息:\t%s\n\t位于:\t第 %d 行  第 %d 列\n\t原文:\t%s"
+                        printfn "[ERROR][%s]%s\r\n\t%s >>>\r\n\t信息:\t%s\r\n\t位于:\t第 %d 行  第 %d 列\r\n\t原文:\t%s"
                             PluginName
                             (content.ToString())
                             "Esprima.ParserException"
@@ -130,7 +129,7 @@ module Console=
                     if jex.Message.StartsWith(API.PFJsrExceptionStart) then
                         match ConsoleMode with
                         | true->
-                            printfn "\x1b[38;2;240;128;128m[\x1b[38;2;253;99;71mWARN\x1b[38;2;240;128;128m][\x1b[38;2;167;132;239m%s\x1b[38;2;240;128;128m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;255;153;144m\t%s \x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;175;238;238m信息:\t\x1b[4m\x1b[38;2;127;255;1m\x1b[48;2;25;25;112m%s\x1b[0m\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                            printfn "\x1b[38;2;240;128;128m[\x1b[38;2;253;99;71mWARN\x1b[38;2;240;128;128m][\x1b[38;2;167;132;239m%s\x1b[38;2;240;128;128m]\x1b[38;2;234;47;39m%s\r\n\x1b[38;2;255;153;144m\t%s \x1b[38;2;2;250;250m>>>\r\n\t\x1b[38;2;175;238;238m信息:\t\x1b[4m\x1b[38;2;127;255;1m\x1b[48;2;25;25;112m%s\x1b[0m\r\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\r\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
                                     PluginName
                                     (content.ToString())
                                     "PFJsrException"
@@ -139,7 +138,7 @@ module Console=
                                     (jex.Column)
                                     (Line.Trim())
                         |_->
-                            printfn "[WARN][%s]%s\n\t%s >>>\n\t信息:\t%s\n\t位于:\t第 %d 行  第 %d 列\n\t原文:\t%s"
+                            printfn "[WARN][%s]%s\r\n\t%s >>>\r\n\t信息:\t%s\r\n\t位于:\t第 %d 行  第 %d 列\r\n\t原文:\t%s"
                                     PluginName
                                     (content.ToString())
                                     "PFJsrException"
@@ -150,7 +149,7 @@ module Console=
                     else
                         match ConsoleMode with
                         | true->
-                            printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\n\x1b[38;2;238;34;175m\t%s \x1b[38;2;2;250;250m>>>\x1b[0m\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
+                            printfn "\x1b[93m\x1b[41m[\x1b[0m\x1b[101m\x1b[4mERROR\x1b[0m\x1b[93m\x1b[41m]\x1b[0m\x1b[38;2;138;143;226m[\x1b[38;2;167;132;239m%s\x1b[38;2;138;143;226m]\x1b[38;2;234;47;39m%s\r\n\x1b[38;2;238;34;175m\t%s \x1b[38;2;2;250;250m>>>\x1b[0m\r\n\t\x1b[38;2;175;238;238m信息:\t\x1b[38;2;147;147;119m%s\r\n\x1b[38;2;175;238;238m\t位于:\t\x1b[38;2;147;147;119m第 \x1b[38;2;147;147;119m\x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 行  \x1b[38;2;147;147;119m\x1b[38;2;147;147;119m第 \x1b[4m%d\x1b[0m\x1b[38;2;147;147;119m 列\r\n\x1b[38;2;175;238;238m\t原文:\t\x1b[0m\x1b[2m%s\x1b[0m"
                                 PluginName
                                 (content.ToString())
                                 "Runtime.JavaScriptException"
@@ -159,7 +158,7 @@ module Console=
                                 (jex.Column)
                                 (Line.Trim())
                         |_->
-                            printfn "[ERROR][%s]%s\n\t%s >>>\n\t信息:\t%s\n\t位于:\t第 %d 行  第 %d 列\n\t原文:\t%s"
+                            printfn "[ERROR][%s]%s\r\n\t%s >>>\r\n\t信息:\t%s\r\n\t位于:\t第 %d 行  第 %d 列\r\n\t原文:\t%s"
                                 PluginName
                                 (content.ToString())
                                 "Runtime.JavaScriptException"
@@ -171,7 +170,7 @@ module Console=
             | :? API.VanillaScriptException as vex->
                 try
                     let mutable tempI=0
-                    let stackStr=String.concat "\n\t" [
+                    let stackStr=String.concat "\r\n\t" [
                         for (raw,funName,tp,l,c) in vex.stack do
                             if raw.Equals("at Anonymous function (CSR_tmpscript_0:14:9)")|>not then
                                 //$"  方法:{funName}|类型:{t}|行:{l}|列{c}"
@@ -218,14 +217,14 @@ module Console=
 {t}{sp}原文:{t}{Line.Trim()}"""
                         ]
                     if ConsoleMode then
-                        printfn "\x1b[38;2;240;128;128m[\x1b[38;2;253;99;71mWARN\x1b[38;2;240;128;128m][\x1b[38;2;167;132;239m%s\x1b[38;2;240;128;128m]\x1b[38;2;254;197;189m%s\n\t\x1b[38;2;255;153;144m[%s]\x1b[38;2;2;250;250m>>>\n\t\x1b[38;2;232;147;119m┣ \x1b[38;2;175;238;238m信息:\t\x1b[38;2;190;200;200m%s\n\t%s"
+                        printfn "\x1b[38;2;240;128;128m[\x1b[38;2;253;99;71mWARN\x1b[38;2;240;128;128m][\x1b[38;2;167;132;239m%s\x1b[38;2;240;128;128m]\x1b[38;2;254;197;189m%s\r\n\t\x1b[38;2;255;153;144m[%s]\x1b[38;2;2;250;250m>>>\r\n\t\x1b[38;2;232;147;119m┣ \x1b[38;2;175;238;238m信息:\t\x1b[38;2;190;200;200m%s\r\n\t%s"
                             PluginName
                             ("[VanillaScriptException]\x1b[38;2;234;107;99m"+content.ToString())
                             (vex.scriptName+".js")
                             vex.message
                             stackStr
                     else
-                        printfn "[WARN][%s]%s\n[%s]>>>%s\n%s"
+                        printfn "[WARN][%s]%s\r\n[%s]>>>%s\r\n%s"
                             PluginName
                             ("[VanillaScriptException]"+content.ToString())
                             (vex.scriptName+".js")
