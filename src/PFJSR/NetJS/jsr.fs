@@ -28,10 +28,11 @@ module JSR=
         true
         )|>options.CatchClrExceptions|>ignore
         let ( !~ ) (a: System.Reflection.Assembly) = options.AllowClr(a)|>ignore
-        let ( !+ ) (t: System.Type) = !~ t.Assembly
-        !+typeof<Jint.Engine>
-        !+typeof<Reflection.FSharpType>
-        !+typeof<Newtonsoft.Json.JsonConvert>
+        for x in System.AppDomain.CurrentDomain.GetAssemblies() do
+            #if DEBUG
+            Console.WriteLine(x.GetName())
+            #endif
+            !~x
         for x in API.csrAssemblyList do 
             !~x
             #if DEBUG
