@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [ "ES2017" ],
+    "module": "commonjs",
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "inlineSourceMap": false
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

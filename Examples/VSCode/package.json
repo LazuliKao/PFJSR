@@ -1,0 +1,19 @@
+{
+  "name": "pftrade",
+  "version": "0.0.1",
+  "description": "PFTrade",
+  "main": "PFTrade.js",
+  "author": {
+    "name": "littlegao233"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "watch": "tsc -w",
+    "clean": "tsc --build --clean"
+  },
+  "devDependencies": {
+    "minecraft-scripting-types-server": "^1.0.0",
+    "typescript": "^3.9.7"
+  },
+  "dependencies": {}
+}

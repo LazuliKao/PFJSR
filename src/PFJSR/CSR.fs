@@ -16,6 +16,7 @@ open CSR
                 let commercial:bool = pav.GetValue(pav.Length - 1).Equals("1")
                 mapi <- MCCSAPI(path, Version, commercial)
                 if not (isNull(mapi))  then
+                     printfn $"[F#-PFJSR] version : {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()}. author : littlegao233."
                      System.GC.KeepAlive(mapi);
                      Plugin.onStart(mapi)|>ignore
                      result <- 0
