@@ -1,11 +1,12 @@
 ﻿namespace CSR
 open CSR
   type public Plugin()=
+        //static let _a=
+        //    printfn "[PFJSR]模块导入..."
         static let mutable mapi:MCCSAPI =null
         //插件主入口 请勿随意更改(由gxh翻译自CSRAPI)
         static member public onServerStart(pathandversion:string):int =
             #if DEBUG
-            
             "%s" pathandversion
             #endif
             let mutable result:int = -1
@@ -22,6 +23,6 @@ open CSR
                      result <- 0
             if result = -1 then  printf "[F#-PFJSR] plugin Load failed."
             result
-        static member  public  onStart(api:MCCSAPI)=
+        static member public onStart(api:MCCSAPI)=
             //TODO  此处需要自行实现
             PFJSR.PluginMain.Init(api)
