@@ -19,6 +19,11 @@ steps:
 
 - task: NuGetCommand@2
   inputs:
+    command: 'custom'
+    arguments: 'nuget sources Add -Name "JintMyGet" -Source https://www.myget.org/F/jint/api/v3/index.json'
+    
+- task: NuGetCommand@2
+  inputs:
     restoreSolution: '$(solution)'
 
 - task: VSBuild@1
