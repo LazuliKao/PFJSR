@@ -19,8 +19,8 @@ steps:
 
 - task: NuGetCommand@2
   inputs:
-    command: 'custom'
-    arguments: 'restore $(solution) -Verbosity Detailed -source https://www.myget.org/F/jint/api/v3/index.json'
+    command: 'restore'
+    restoreSolution: '$(solution)'
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
