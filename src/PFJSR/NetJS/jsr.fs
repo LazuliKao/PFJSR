@@ -42,14 +42,23 @@ module JSR=
         let core=NativeFunc.Core.Model(scriptName,eng)
         RunnerList<-new JSRunner(eng,core) :: RunnerList
         //注入各种方法
-        let ( !++ ) (name:string,value:obj) = //设置公共对象（方法、常量）
+        let ( <+< ) (name:string)(value:obj) = //设置公共对象（方法、常量）
             //(JsString(name),value)|>eng.SetValue|>ignore
             eng.Global.Set(JsString(name),JsValue.FromObject(eng,value))|>ignore
         //基础功能
         for item in NativeFunc.Basic.Instance.GetType().GetProperties() do
-             !++(item.Name,item.GetValue(NativeFunc.Basic.Instance))
+              item.Name <+< (item.GetValue(NativeFunc.Basic.Instance))
         //核心玩法
         for item in core.GetType().GetProperties() do
-             !++(item.Name,item.GetValue(core))
+             item.Name <+< item.GetValue(core)
+        //功能同步于：https://github.com/cngege/BDSJSR2/blob/d56f8a1ebdd73c70bdc0b392c0fd233547135dce/BDSJSR2/Program.cs#L1348
+        //api
+        "api" <+< API.api
+        //lib
+        let libObj=Jint.Native.Object.ObjectInstance(eng)//创建JsObject
+        (JsString("System"),"System"|>JsString|>eng.Global.Get)
+            |>libObj.Set|>ignore//设置JsObject对象的System属性
+        "lib" <+< libObj//添加全局常量
+        //ram
+        "ram" <+< Jint.Runtime.Interop.TypeReference.CreateTypeReference(eng, typeof<PFJSRBDSAPI.Ram>)
         eng
-         
