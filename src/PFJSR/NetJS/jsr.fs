@@ -10,7 +10,7 @@ module JSR=
         member _this.core with get() =_core  
     let mutable RunnerList:list<JSRunner>=[]
     let InitScript(eng:Engine,js:string)=
-        js|>eng.Execute|>ignore 
+        (js,Esprima.ParserOptions(source=js))|>eng.Execute|>ignore 
     let CreateEngine(scriptName):Engine=
         let options=Jint.Options().AllowClr() 
         #if DEBUG
@@ -40,15 +40,16 @@ module JSR=
             #endif
         let eng=Jint.Engine(options)
         let core=NativeFunc.Core.Model(scriptName,eng)
-        //注入各种方法
         RunnerList<-new JSRunner(eng,core) :: RunnerList
+        //注入各种方法
+        let ( !++ ) (name:string,value:obj) = //设置公共对象（方法、常量）
+            //(JsString(name),value)|>eng.SetValue|>ignore
+            eng.Global.Set(JsString(name),JsValue.FromObject(eng,value))|>ignore
         //基础功能
         for item in NativeFunc.Basic.Instance.GetType().GetProperties() do
-             (new JsString(item.Name),
-                  item.GetValue(NativeFunc.Basic.Instance))|>eng.SetValue|>ignore
+             !++(item.Name,item.GetValue(NativeFunc.Basic.Instance))
         //核心玩法
         for item in core.GetType().GetProperties() do
-             (new JsString(item.Name),
-                  item.GetValue(core))|>eng.SetValue|>ignore
+             !++(item.Name,item.GetValue(core))
         eng
          

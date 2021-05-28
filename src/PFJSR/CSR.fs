@@ -7,7 +7,7 @@ open CSR
         //插件主入口 请勿随意更改(由gxh翻译自CSRAPI)
         static member public onServerStart(pathandversion:string):int =
             #if DEBUG
-            "%s" pathandversion
+            printfn "%s" pathandversion
             #endif
             let mutable result:int = -1
             let pav:string[] =pathandversion.Split(",".ToCharArray())
