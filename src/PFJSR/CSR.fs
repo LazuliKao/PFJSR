@@ -25,4 +25,6 @@ open CSR
             result
         static member public onStart(api:MCCSAPI)=
             //TODO  此处需要自行实现
-            PFJSR.PluginMain.Init(api)
+            System.Threading.Tasks.Task.Run(fun _->
+                PFJSR.PluginMain.Init(api)
+            ).Wait()

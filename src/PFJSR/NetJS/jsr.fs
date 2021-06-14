@@ -10,7 +10,15 @@ module JSR=
         member _this.core with get() =_core  
     let mutable RunnerList:list<JSRunner>=[]
     let InitScript(eng:Engine,js:string)=
-        (js,Esprima.ParserOptions(source=js))|>eng.Execute|>ignore 
+        //let sp=Esprima.JavaScriptParser(js)
+        //let sc=sp.ParseScript()
+        //sc.Strict|>Console.WriteLine
+        //(sc)|>eng.Evaluate|>ignore 
+        //eng.Eval.Invoke(js|>JsString)|>ignore 
+        lock eng (fun _->
+            (js,Esprima.ParserOptions(source=js))|>eng.Execute|>ignore 
+        )
+        //(js,Esprima.ParserOptions(source=js))|>eng.Execute|>ignore 
     let CreateEngine(scriptName):Engine=
         let options=Jint.Options().AllowClr() 
         #if DEBUG

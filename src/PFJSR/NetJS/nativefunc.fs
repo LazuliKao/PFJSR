@@ -411,7 +411,7 @@ module NativeFunc=
                     FunThreadEvent.WaitOne()|>ignore
                 with _->()
         )
-        let RunFun(e:unit->unit)=
+        let RunFun(e:unit->unit)(engine:Jint.Engine)=
             e|>FunQueue.Enqueue
             try
                 FunThreadEvent.Set()|>ignore
@@ -450,10 +450,16 @@ module NativeFunc=
                     //SynchronizationContext.Current 为获取当前线程的同步上下文，拿到线程的上下文之后可以通过调用Send（同步）和Post （异步）将消息分派到同步上下文，以此实现在指定线程执行！！！
                     t.Elapsed.AddHandler(fun _ _->
                         //c.Post(SendOrPostCallback(fun _->
-                            RunFun(fun ()->
+                            engine|>RunFun(fun ()->
                                 try
-                                    if o.IsString() then engine.Execute(o.ToString())|>ignore
-                                    else o.Invoke()|>ignore
+                                    if o.IsString() then 
+                                        lock engine (fun _->
+                                            engine.Execute(o.ToString())|>ignore
+                                        )
+                                    else 
+                                        lock engine (fun _->
+                                            o.Invoke()|>ignore
+                                        )
                                 with ex->
                                     Console.WriteLineErrEx
                                         $"在脚本\"{scriptName}\"执行\"setTimeout时遇到错误：" 
@@ -483,8 +489,11 @@ module NativeFunc=
                     timerList.Add(id,t)
                     if o.IsString() then
                         t.Elapsed.AddHandler(fun _ _->
-                            RunFun(fun ()->
-                                try engine.Execute(o.ToString())|>ignore
+                            engine|>RunFun(fun ()->
+                                try 
+                                    lock engine (fun _->
+                                        engine.Execute(o.ToString())|>ignore
+                                    )
                                 with ex->Console.WriteLineErrEx
                                                     $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
                                                     ex scriptName
@@ -492,8 +501,11 @@ module NativeFunc=
                         )
                     else
                         t.Elapsed.AddHandler(fun _ _->
-                            RunFun(fun ()->
-                                try o.Invoke()|>ignore
+                            engine|>RunFun(fun ()->
+                                try 
+                                lock engine (fun _->
+                                    o.Invoke()|>ignore
+                                )
                                 with ex->Console.WriteLineErrEx
                                                     $"在脚本\"{scriptName}\"执行\"setInterval时遇到错误："
                                                     ex scriptName
@@ -515,9 +527,13 @@ module NativeFunc=
                 if not (o|>isNull) then
                     try
                         if o.IsString() then
-                            engine.Execute(o.ToString())|>ignore
+                            lock engine (fun _->
+                                engine.Execute(o.ToString())|>ignore
+                            )
                         else
-                            o.Invoke()|>ignore
+                            lock engine (fun _->
+                                o.Invoke()|>ignore
+                            )
                     with ex->Console.WriteLineErrEx
                                         $"在脚本\"{scriptName}\"执行\"runScript时遇到错误："
                                         ex scriptName
@@ -530,7 +546,9 @@ module NativeFunc=
                             with _-> ()
                             if f|>isNull|>not then
                                 try
-                                    ret|>f.Invoke
+                                    lock engine (fun _->
+                                        ret|>f.Invoke
+                                    )
                                 with ex->Console.WriteLineErrEx
                                                     $"在脚本\"{scriptName}\"执行\"[request]回调时遇到错误："
                                                     ex scriptName
@@ -545,8 +563,10 @@ module NativeFunc=
                 let fullFunc=MCCSAPI.EventCab(fun e->
                         try
                             //(engine,e|>BaseEvent.getFrom|>SerializeObject)|>JsValue.FromObject|>f.Invoke|>false.Equals|>not
-                            let result=f.Invoke(new JsString(e|>BaseEvent.getFrom|>SerializeObject))
-                            //false|>result.Equals|>not
+                            let mutable result=JsBoolean(true):>JsValue
+                            lock engine (fun _-> 
+                                result<-f.Invoke(new JsString(e|>BaseEvent.getFrom|>SerializeObject))
+                            )//false|>result.Equals|>not
                             if isNull(result) then true else
                                 if result.Type=Jint.Runtime.Types.Boolean then
                                     Jint.Runtime.TypeConverter.ToBoolean(result) 
@@ -573,7 +593,10 @@ module NativeFunc=
                             let got=basee|>BaseEvent.getFrom
                             let e=got|>Newtonsoft.Json.Linq.JObject.FromObject
                             e.Add("result",new JValue(got.RESULT):>JToken)
-                            let result=f.Invoke(new JsString(e.ToString Newtonsoft.Json.Formatting.None))
+                            let mutable result=JsBoolean(true):>JsValue
+                            lock engine (fun _-> 
+                                result<-(f.Invoke(new JsString(e.ToString Newtonsoft.Json.Formatting.None)))
+                            )
                             if isNull(result) then true else
                                 if result.Type=Jint.Runtime.Types.Boolean then
                                     Jint.Runtime.TypeConverter.ToBoolean(result) 
@@ -716,7 +739,9 @@ module NativeFunc=
                             #endif
                             if cb.IsNull()|>not then
                                 //cb.Invoke(JsValue.FromObject(engine,systemCmdResult(cli)))|>ignore                                
-                                cb.Invoke(JsString(Newtonsoft.Json.JsonConvert.SerializeObject(systemCmdResult(cli))))|>ignore
+                                lock engine (fun _->
+                                    cb.Invoke(JsString(Newtonsoft.Json.JsonConvert.SerializeObject(systemCmdResult(cli))))|>ignore
+                                )
                             cli.Dispose()
                         with ex->Console.WriteLineErrEx "systemCmd进程退出回调出错" ex scriptName
                     )|>ignore
@@ -760,7 +785,9 @@ module NativeFunc=
             let JSErunScript_fun(js)(cb:Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
                     try
-                        cb.Invoke(result)
+                        lock engine (fun _->
+                            cb.Invoke(result)
+                        )
                     with ex->
                         try
                         Console.WriteLineErrEx
@@ -772,7 +799,9 @@ module NativeFunc=
             let JSEfireCustomEvent_fun(ename)(jdata)(cb:Action<bool>)=
                 let fullFunc=MCCSAPI.JSECab(fun result->
                     try
-                        cb.Invoke(result)
+                        lock engine (fun _->
+                            cb.Invoke(result)
+                        )
                     with ex->
                         try
                         Console.WriteLineErrEx
@@ -896,7 +925,9 @@ module NativeFunc=
                 if not (o|>isNull) then
                     fun ()->
                         try
-                            o.Invoke()|>ignore
+                            lock engine (fun _->
+                                o.Invoke()|>ignore
+                            )
                         with ex->
                             try
                                 Console.WriteLineErrEx
