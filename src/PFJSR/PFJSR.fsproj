@@ -5,7 +5,7 @@
     <TargetFrameworks>net461</TargetFrameworks>
     <AssemblyName>PFJSR.csr</AssemblyName>
     <OutputPath></OutputPath>
-    <Version>0.0.10</Version>
+    <Version>0.0.11</Version>
     <Authors>littlegao</Authors>
     <Company>PixelFaramitaTeam</Company>
     <NeutralLanguage>zh</NeutralLanguage>
