@@ -382,6 +382,7 @@ module NativeFunc=
         type clearInterval_delegate = delegate of int->unit
         type runScript_delegate = delegate of JsValue->unit
         type postTick_delegate = delegate of JsValue->unit
+        type getItemRawname_delegate = delegate of int->string
         type getscoreById_delegate = delegate of int64*string->int
         type setscoreById_delegate = delegate of int64*string*int->int
         type getAllScore_delegate = delegate of unit -> string
@@ -935,6 +936,7 @@ module NativeFunc=
                                     ex scriptName
                             with _->()
                    |>api.postTick 
+            let getItemRawname_fun(id:int):string = id|>api.getItemRawname
             let getAllScore_fun()=
                 AssertCommercial()
                 api.getAllScore()
@@ -1013,6 +1015,7 @@ module NativeFunc=
             member _this.setscoreboard=setscoreboard_delegate(setscoreboard_fun)
             member _this.getPlayerIP=getPlayerIP_delegate(getPlayerIP_fun)
             member _this.postTick=postTick_delegate(postTick_fun)
+            member _this.getItemRawname=getItemRawname_delegate(getItemRawname_fun)
             member _this.getscoreById=getscoreById_delegate(getscoreById_fun)
             member _this.setscoreById=setscoreById_delegate(setscoreById_fun)
             member _this.getAllScore=getAllScore_delegate(getAllScore_fun)
@@ -1021,8 +1024,6 @@ module NativeFunc=
             member _this.exportPlayersData=exportPlayersData_delegate(exportPlayersData_fun)
             member _this.importPlayersData=importPlayersData_delegate(importPlayersData_fun)
             member _this.systemCmd=systemCmd_delegate(systemCmd_fun)
-
-
     let Reset()=
         for t in Core.timerList.Values do
             try if t.Enabled then t.Stop() with _->()
