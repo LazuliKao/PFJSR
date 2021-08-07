@@ -78,8 +78,8 @@ module VanillaScripts=
                             $"""const System_{id}=server.registerSystem(0, 0);
 let logs = System_{id}.createEventData('minecraft:script_logger_config');
 logs.data.log_information = true;
-logs.data.log_errors = true;
-logs.data.log_warnings = true;
+logs.data.log_errors = false;
+logs.data.log_warnings = false;
 System_{id}.broadcastEvent('minecraft:script_logger_config', logs);
 
 System_{id}.listenForEvent('pfjsr:{id}', (e_{id})=>{{
